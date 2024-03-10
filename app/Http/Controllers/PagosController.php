@@ -22,14 +22,20 @@ class PagosController extends Controller
      */
     public function index()
     {
-		$arrItems = $this->traerDatosLista();
-		$arrPagos = $arrItems['pagos'];
-		$arrMenuCobradores = $arrItems['menuCobradores'];
-		session()->put('pagos', $arrPagos);
-		session()->put('menuCobradores', $arrMenuCobradores);
+//		session()->forget('key');
+//		if (session()->has('key')) {
+//			// Key exists in the session
+//		}
+
+		$this->inicializarDatos();
+		$arrFiltros = session()->get('arrFiltros');
+		$this->pagosLista();
+
 		$pagos = session()->get('pagos');
 		$menuCobradores = session()->get('menuCobradores');
-		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores]);
+		$menuEnArchivo = session()->get('menuEnArchivo');
+		$arrFiltros = session()->get('arrFiltros');
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
     }
 
     /**
@@ -81,25 +87,41 @@ class PagosController extends Controller
     }
 
 	// jom
+	private function inicializarDatos()
+	{
+		if (!session()->has('menuEnArchivo')) {
+			$menuEnArchivo=array();
+			$menuEnArchivo[] =  array('id'=>'seleccione','nombre'=>"Seleccione");
+			$menuEnArchivo[] =  array('id'=>'si','nombre'=>'Si');
+			$menuEnArchivo[] =  array('id'=>'no','nombre'=>'No');
+			session()->put('menuEnArchivo', $menuEnArchivo);
+		}
+		if (!session()->has('menuCobradores')) {
+			$sql = "select idPersona as id, concat(nombre,' ',paterno,' ',materno) as nombre from cobradores ";
+			$menuCobradoresTmp = DB::connection('mysql')->select($sql);
+			$menuCobradores=array();
+			$menuCobradores[] =  array('id'=>'seleccione','nombre'=>"Seleccione");
+			foreach ($menuCobradoresTmp as $item){
+				$menuCobradores[] =  array('id'=>$item->id,'nombre'=>$item->nombre);
+			}
+			session()->put('menuCobradores', $menuCobradores);
+		}
+		if (!session()->has('arrFiltros')) {
+			$arrFiltros = array(
+				'fechaInicial' => '',
+				'fechaFinal' => '',
+				'cliente' => '',
+				'archivo' => '',
+				'enExcel' => 'seleccione',
+				'cobrador' => 'seleccione'
+			);
+			session()->put('arrFiltros', $arrFiltros);
+		}
+	}
+
 	public function ficha($id){
 		$pago = $this->traerDatosFicha($id);
 		return view('pagos.ficha')->with(['pago' => $pago]);
-	}
-
-	public function formatoFecha($fecha){
-		$cachos = explode('-',$fecha);
-		$dia = $cachos[2];
-		$mes = $cachos[1];
-		$ano = $cachos[0];
-		return($dia.'-'.$mes.'-'.$ano);
-	}
-
-	public function formatoFechaMysql($fecha){
-		$cachos = explode('-',$fecha);
-		$dia = $cachos[0];
-		$mes = $cachos[1];
-		$ano = $cachos[2];
-		return($ano.'-'.$mes.'-'.$dia);
 	}
 
 	public function cambiarProximaFecha(Request $request)
@@ -107,7 +129,7 @@ class PagosController extends Controller
 		$datos = $request;
 		$id = $request->id;
 		$nuevaFecha = $request->nuevaFecha;
-		$nuevaFechaMy = $this->formatoFechaMysql($request->nuevaFecha);
+		$nuevaFechaMy = $this->hacerFechaMysql($request->nuevaFecha);
 		$sql = "select idCuenta from pagos where id = $id";
 		$resultado = DB::select($sql);
 		$idCuenta = $resultado[0]->idCuenta;
@@ -123,8 +145,8 @@ class PagosController extends Controller
 	private function traerDatosFicha($id)
 	{
 		$pago = Pagos::find($id);
-		$pago->fechaRegistroH = $this->formatoFecha($pago->fechaRegistro);
-		$pago->fechaSiguientePagoH = $this->formatoFecha($pago->fechaSiguientePago);
+		$pago->fechaRegistroH = $this->formatoFechaH($pago->fechaRegistro);
+		$pago->fechaSiguientePagoH = $this->formatoFechaH($pago->fechaSiguientePago);
 		$sql = "select concat(nombre,' ',paterno,' ',materno) as nombreCobrador from cobradores where idPersona = ".$pago->idCobrador;
 		$cobrador = DB::select($sql);
 		$pago->nombreCobrador = $cobrador[0]->nombreCobrador;
@@ -137,7 +159,15 @@ class PagosController extends Controller
 		foreach ($pagos as $pago){
 			$pago->marcado = 1;
 		}
-		return view('pagos.lista')->with(['arrPagos' => $pagos]);
+		session()->put('pagos', $pagos);
+
+
+		$pagos = session()->get('pagos');
+		$menuCobradores = session()->get('menuCobradores');
+		$menuEnArchivo = session()->get('menuEnArchivo');
+		$arrFiltros = session()->get('arrFiltros');
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
+
 	}
 
 	public function quitarTodos()
@@ -146,12 +176,16 @@ class PagosController extends Controller
 		foreach ($pagos as $pago){
 			$pago->marcado = 0;
 		}
-		return view('pagos.lista')->with(['arrPagos' => $pagos]);
+		$pagos = session()->get('pagos');
+		$menuCobradores = session()->get('menuCobradores');
+		$menuEnArchivo = session()->get('menuEnArchivo');
+		$arrFiltros = session()->get('arrFiltros');
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
 	}
 
 
-	private function traerDatosLista()
-	{
+	private function pagosLista($stringBusqueda = ''){
+		if(!empty($stringBusqueda)) $stringBusqueda= " where ".$stringBusqueda;
 		$sql = "select pagos.*,date_format(pagos.fechaSiguientePago,'%d-%m-%Y') as fechaSiguientePagoH,
        	date_format(pagos.fechaRegistro,'%d-%m-%Y') as fechaDePago, 
        	cobradores.nombre as nombreCobrador, cobradores.id as idCobradorLocal, 
@@ -159,48 +193,56 @@ class PagosController extends Controller
        	0 as marcado     
 			from pagos 
 			left join cobradores on cobradores.idPersona = pagos.idCobrador
-			left join archivosExportacion on archivosExportacion.id = pagos.idArchivoExportacion";
+			left join archivosExportacion on archivosExportacion.id = pagos.idArchivoExportacion
+			$stringBusqueda";
+		$pagos = DB::connection('mysql')->select($sql);
+		//if (session()->has('pagos'))  session()->forget('pagos');
+		session()->put('pagos', $pagos);
+	}
+
+
+
+	private function traerDatosLista($stringBusqueda = '')
+	{
+		if(!empty($stringBusqueda)) $stringBusqueda= " where ".$stringBusqueda;
+		$sql = "select pagos.*,date_format(pagos.fechaSiguientePago,'%d-%m-%Y') as fechaSiguientePagoH,
+       	date_format(pagos.fechaRegistro,'%d-%m-%Y') as fechaDePago, 
+       	cobradores.nombre as nombreCobrador, cobradores.id as idCobradorLocal, 
+       	archivosExportacion.archivo as archivo,
+       	0 as marcado     
+			from pagos 
+			left join cobradores on cobradores.idPersona = pagos.idCobrador
+			left join archivosExportacion on archivosExportacion.id = pagos.idArchivoExportacion
+			$stringBusqueda";
 		$pagos = DB::connection('mysql')->select($sql);
 		$sql = "select id, concat(nombre,' ',paterno,' ',materno) as nombre from cobradores ";
-		$menuCobradores = DB::connection('mysql')->select($sql);
+		$menuCobradoresTmp = DB::connection('mysql')->select($sql);
+		$menuCobradores=array();
+		$menuCobradores[] =  array('id'=>'seleccione','nombre'=>"Seleccione");
+		foreach ($menuCobradoresTmp as $item){
+			$menuCobradores[] =  array('id'=>$item->id,'nombre'=>$item->nombre);
+		}
+		$menuEnArchivo=array();
+		$menuEnArchivo[] =  array('id'=>'seleccione','nombre'=>"Seleccione");
+		$menuEnArchivo[] =  array('id'=>'si','nombre'=>'Si');
+		$menuEnArchivo[] =  array('id'=>'no','nombre'=>'No');
 
-
-
-
-		$arrInfo = array('pagos'=>$pagos,'menuCobradores'=>$menuCobradores);
+		$arrInfo = array('pagos'=>$pagos,'menuCobradores'=>$menuCobradores,'menuEnArchivo'=>$menuEnArchivo);
 		return($arrInfo);
 	}
 
 	public function regresarLista()
 	{
-		$pagos = Session::get('pagos');
-		return view('pagos.lista')->with(['arrPagos' => $pagos]);
+		$pagos = session()->get('pagos');
+		$menuCobradores = session()->get('menuCobradores');
+		$menuEnArchivo = session()->get('menuEnArchivo');
+		$arrFiltros = session()->get('arrFiltros');
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
 	}
-
 
 	public function submitLista(Request $request)
 	{
 		$datos = $request->toArray();
-		switch ($request->accion){
-			case 'excel':
-				break;
-			default:
-				$this->actualizarMarcados($datos);
-				$id = $request->accion;
-				$this->ficha($id);
-				break;
-		}
-
-
-
-
-
-
-
-
-
-
-
 		$arrSeleccionados=array();
 		$textoSeleccionados = '';
 		foreach ($datos as $key=>$value){
@@ -211,78 +253,82 @@ class PagosController extends Controller
 				$textoSeleccionados.=$cachos[1];
 			}
 		}
+		switch ($request->accion){
+			case 'excel':
+				if(!empty($arrSeleccionados)){
+					$this->prepararExcel($textoSeleccionados);
+				}
+				break;
+			default:
+				$this->actualizarMarcados($arrSeleccionados);
+				$id = $request->accion;
+				$pago = $this->traerDatosFicha($id);
+				return view('pagos.ficha')->with(['pago' => $pago]);
+				break;
+		}
+	}
 
-		if(!empty($arrSeleccionados)){
-			$sql = "select date_format(pagos.fechaRegistro,'%d-%m-%Y') as fechaDePago, cobradores.nombre as nombreCobrador, pagos.claveCuenta, pagos.nombreCliente , pagos.montoCobradoEnVisita    
+	private function actualizarMarcados($arrSeleccionados)
+	{
+		$pagos = session()->get('pagos');
+		foreach ($pagos as $pago){
+			if(in_array($pago->id,$arrSeleccionados)) {
+				$pago->marcado == 1;
+			}else{
+				$pago->marcado == 0;
+			}
+		}
+		//session()->forget('pagos');
+		session()->put('pagos', $pagos);
+	}
+
+	private function prepararExcel($textoSeleccionados)
+	{
+		$sql = "select date_format(pagos.fechaRegistro,'%d-%m-%Y') as fechaDePago,  pagos.idCuenta,  pagos.montoCobradoEnVisita, pagos.cobrado as recibo   
 			from pagos 
 			left join cobradores on cobradores.idPersona = pagos.idCobrador
 			where pagos.id in ($textoSeleccionados)";
-			$resultado = DB::connection('mysql')->select($sql);
-			$arrResultado = array();
-			foreach ($resultado as $item){
-				$arrResultado[]=array('fechaDePago'=>$item->fechaDePago,'nombreCobrador'=>$item->nombreCobrador,'claveCuenta'=>$item->claveCuenta,'nombreCliente'=>$item->nombreCliente,'montoCobradoEnVisita'=>$item->montoCobradoEnVisita);
-			}
+		$resultado = DB::connection('mysql')->select($sql);
+		$arrResultado = array();
+		foreach ($resultado as $item){
+			$arrResultado[]=array('fechaDePago'=>$item->fechaDePago,'cuenta'=>$item->idCuenta,'montoCobradoEnVisita'=>$item->montoCobradoEnVisita,'recibo'=>$item->recibo);
+		}
 
-			// hacer titulo
-			$nombreUsuario = Auth::user()->name;
-			$nombreNormalizado = $this->convertirAASCII($nombreUsuario);
-			$hoy = date('d_m_Y_H_i_s');
-			$fechaCreacion =  date('Y_m_d');
-			$titulo = $nombreNormalizado.'_'.$hoy;
-			$file = urldecode($titulo.'.xlsx');
-			if(preg_match('/^[^.][-a-z0-9_.]+[a-z]$/i', $file)) {
-				$this->hacerExcel($arrResultado,$titulo,$file);
-				$filepath = Storage::path('tmp/' . $file);
-				// grabar en tabla de exceles
-				$idGenerador = Auth::user()->id;
-				$sql = "insert into archivosExportacion set 
+		// hacer titulo
+		$nombreUsuario = Auth::user()->name;
+		$nombreNormalizado = $this->convertirAASCII($nombreUsuario);
+		$hoy = date('d_m_Y_H_i_s');
+		$fechaCreacion =  date('Y_m_d');
+		$titulo = $nombreNormalizado.'_'.$hoy;
+		$file = urldecode($titulo.'.xlsx');
+		if(preg_match('/^[^.][-a-z0-9_.]+[a-z]$/i', $file)) {
+			$this->hacerExcel($arrResultado,$titulo,$file);
+			$filepath = Storage::path('tmp/' . $file);
+			// grabar en tabla de exceles
+			$idGenerador = Auth::user()->id;
+			$sql = "insert into archivosExportacion set 
                         idGenerador = $idGenerador,
                         fechaCreacion = '".$fechaCreacion."',
                         archivo = '".$file."'";
-				$resultado = DB::connection('mysql')->insert($sql);
-				$idInsertado = DB::getPdo()->lastInsertId();
-				// update cada archivo con el nombre de el excel generado
-				$sql1 = "update pagos set enExcel=1, idArchivoExportacion=$idInsertado where pagos.id in ($textoSeleccionados)";
-				DB::connection('mysql')->insert($sql1);
-				// hacer nueva lista para desplegar
-				// download el excel generado
-				$this->downloadExcel($filepath);
-			}
-
-
-
-
-
-
+			DB::connection('mysql')->insert($sql);
+			$idInsertado = DB::getPdo()->lastInsertId();
+			// update cada archivo con el nombre de el excel generado
+			$sql1 = "update pagos set enExcel=1, idArchivoExportacion=$idInsertado where pagos.id in ($textoSeleccionados)";
+			DB::connection('mysql')->insert($sql1);
+			// hacer nueva lista para desplegar
+			// download el excel generado
+			$this->downloadExcel($filepath);
 		}
-
-		$arrItems = $this->traerDatosLista();
-		$pagos = $arrItems['pagos'];
-		$menuCobradores = $arrItems['menuCobradores'];
-		//Session::put('pagos', $pagos);
-		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores]);
-	}
-
-	private function actualizarMarcados()
-	{
-
 	}
 
 	private function hacerExcel($datos,$titulo,$file)
 	{
-		// hacer titulo
-
-//		$nombreUsuario = Auth::user()->name;
-//		$nombreNormalizado = $this->convertirAASCII($nombreUsuario);
-//		$hoy = date('d_m_Y_H_i_s');
-//		$titulo = $nombreNormalizado.'_'.$hoy;
-
 		//object of the Spreadsheet class to create the excel data
 		$spreadsheet = new Spreadsheet();
 		$spreadsheet->getDefaultStyle()->getFont()->setName('Arial');
 		$spreadsheet->getDefaultStyle()->getFont()->setSize(12);
 		//add some data in excel cells
-		$y = 3;
+		$y = 1;
 		$this->llenarExcel($spreadsheet,$datos,$titulo,$y);
 
 		// ancho de todas las columnas
@@ -345,27 +391,27 @@ class PagosController extends Controller
 
 		$totalSeccion=0;
 		// titulo de seccion
-		$spreadsheet->getActiveSheet()->getStyle('A' . $y . ':E' . $y)->getFont()
-			->setBold(true)
-			->setSize(16)
-			->getColor()
-			->setRGB('FFFFFF');
-
-		$spreadsheet
-			->getActiveSheet()
-			->getStyle('A' . $y . ':E' . $y)
-			->getFill()
-			->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-			->getStartColor()
-			->setARGB('025023');
-		$spreadsheet->setActiveSheetIndex(0)
-			->setCellValue('A' . $y, $titulo);
-
-		$spreadsheet->getActiveSheet()->mergeCells('A' . $y . ':E' . $y); //, Worksheet::MERGE_CELL_CONTENT_HIDE
+//		$spreadsheet->getActiveSheet()->getStyle('A' . $y . ':D' . $y)->getFont()
+//			->setBold(true)
+//			->setSize(16)
+//			->getColor()
+//			->setRGB('FFFFFF');
+//
+//		$spreadsheet
+//			->getActiveSheet()
+//			->getStyle('A' . $y . ':D' . $y)
+//			->getFill()
+//			->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+//			->getStartColor()
+//			->setARGB('025023');
+//		$spreadsheet->setActiveSheetIndex(0)
+//			->setCellValue('A' . $y, $titulo);
+//
+//		$spreadsheet->getActiveSheet()->mergeCells('A' . $y . ':D' . $y); //, Worksheet::MERGE_CELL_CONTENT_HIDE
 
 		// formatos cabecera
-		$y++;
-		$spreadsheet->getActiveSheet()->getStyle('A' . $y . ':E' . $y)->getFont()
+//		$y++;
+		$spreadsheet->getActiveSheet()->getStyle('A' . $y . ':D' . $y)->getFont()
 			->setBold(true)
 			->setSize(14)
 			->getColor()
@@ -373,41 +419,28 @@ class PagosController extends Controller
 
 		$spreadsheet
 			->getActiveSheet()
-			->getStyle('A' . $y . ':E' . $y)
+			->getStyle('A' . $y . ':D' . $y)
 			->getFill()
 			->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
 			->getStartColor()
 			->setARGB('7C9248');
 
 		$spreadsheet->setActiveSheetIndex(0)
-			->setCellValue('A' . $y, 'Fecha de pago')
-			->setCellValue('B' . $y, 'Cobrador')
-			->setCellValue('C' . $y, 'Clave cuenta')
-			->setCellValue('D' . $y, 'Cliente')
-			->setCellValue('E' . $y, 'Pago');
-
-
+			->setCellValue('A' . $y, '# de recibo')
+			->setCellValue('B' . $y, '# cuenta')
+			->setCellValue('C' . $y, '# pago realizado')
+			->setCellValue('D' . $y, 'Fecha de pago');
 		$no = 0;
 
 		for ($x = 0; $x < count($arreglo); $x++) {
 
 			// renglon y formato de celda
 			$y++;
-
-			// datos
-			//$fechaH = $this->fechaHumana($arreglo[$x]['fechaRegistro']);
-
-
-			$spreadsheet->getActiveSheet()->getStyle('A' . $y . ':E' . $y)->getFont()
+			$spreadsheet->getActiveSheet()->getStyle('A' . $y . ':D' . $y)->getFont()
 				->setBold(true)
 				->setSize(12)
 				->getColor()
 				->setRGB('000000');
-
-
-
-//			$spreadsheet->getActiveSheet()->getStyle('C' . $y)->getNumberFormat()
-//				->setFormatCode(PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
 
 			$no++;
 			// borde de renglon
@@ -419,19 +452,15 @@ class PagosController extends Controller
 					),
 				),
 			);
-			$spreadsheet->getActiveSheet()->getStyle('A' . $y . ':E' . $y)->applyFromArray($styleArray);
+			$spreadsheet->getActiveSheet()->getStyle('A' . $y . ':D' . $y)->applyFromArray($styleArray);
 
 			// anotar datos del renglon
 			$spreadsheet->setActiveSheetIndex(0)
-				->setCellValue('A' . $y,$arreglo[$x]['fechaDePago'])
-				->setCellValue('B' . $y, $arreglo[$x]['nombreCobrador'])
-				->setCellValue('C' . $y, $arreglo[$x]['claveCuenta'])
-				->setCellValue('D' . $y, $arreglo[$x]['nombreCliente'])
-				->setCellValue('E' . $y, $arreglo[$x]['montoCobradoEnVisita']);
+				->setCellValue('A' . $y,$arreglo[$x]['recibo'])
+				->setCellValue('B' . $y, $arreglo[$x]['cuenta'])
+				->setCellValue('C' . $y, $arreglo[$x]['montoCobradoEnVisita'])
+				->setCellValue('D' . $y, $arreglo[$x]['fechaDePago']);
 		}
-
-		// linea de abajo verde
-
 		return($y);
 	}
 
@@ -447,5 +476,139 @@ class PagosController extends Controller
 	{
 		$cachos=explode('-',$fecha);
 		return($cachos['2']."-".$cachos['1']."-".$cachos['0']);
+	}
+
+	public function filtrarLista(Request $request)
+	{
+		$fechaInicial = $this->validarFecha($request->fechaInicial);
+		$fechaInicialValidada = ($fechaInicial == 0) ? "" : $fechaInicial;
+		$fechaFinal = $this->validarFecha($request->fechaFinal);
+		$fechaFinalValidada = ($fechaFinal == 0) ? "" : $fechaFinal;
+		$clienteValidado = (!empty($request->cliente)) ? $request->cliente : '';
+		$archivoValidado = (!empty($request->archivo)) ? $request->archivo : '';
+		$arrFiltros = array(
+			'fechaInicial' => $fechaInicialValidada,
+			'fechaFinal' => $fechaFinalValidada,
+			'cliente' => $clienteValidado,
+			'archivo' => $archivoValidado,
+			'enExcel' => $request->enArchivo,
+			'cobrador' => $request->cobrador
+		);
+		session()->put('arrFiltros', $arrFiltros);
+		$stringBusqueda = $this->hacerStringBusqueda();
+		$this->pagosLista($stringBusqueda);
+
+		$pagos = session()->get('pagos');
+		$menuCobradores = session()->get('menuCobradores');
+		$menuEnArchivo = session()->get('menuEnArchivo');
+		$arrFiltros = session()->get('arrFiltros');
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
+	}
+
+	private function hacerStringBusqueda()
+	{
+		$datos = session()->get('arrFiltros');
+		$stringBusquedaFecha = '';
+		$stringBusquedaCliente = '';
+		$stringBusquedaArchivo = '';
+		$stringBusquedaCobrador = '';
+		$stringBusquedaEnExcel = '';
+		$stringFinal = '';
+		// fechas
+		if(!empty($datos['fechaInicial']) || !empty($datos['fechaFinal'])){
+			$stringBusquedaFecha = $this->hacerStringFecha($datos['fechaInicial'],$datos['fechaFinal']);
+		}
+
+		// cliente
+		if(!empty($datos['cliente'])) $stringBusquedaCliente = " nombreCliente like '%".$datos['cliente']."%' ";
+
+		// archivo
+		if(!empty($datos['archivo'])) $stringBusquedaArchivo = " archivo like '%".$datos['archivo']."%' ";
+
+		// cobrador
+		if($datos['cobrador']!='seleccione' && $datos['cobrador']>0) $stringBusquedaCobrador = " idCobrador = ".$datos['cobrador']." " ;
+
+		// enArchivo
+		if($datos['enExcel']!='seleccione') {
+			$stringBusquedaEnExcel = ($datos['enExcel']=='si') ? $stringBusquedaEnExcel = "  enExcel = 1 " : $stringBusquedaEnExcel = "  enExcel = 0 ";
+		}
+
+		if(!empty($stringBusquedaFecha)){
+			if(!empty($stringFinal)) $stringFinal.=" && ";
+			$stringFinal.=$stringBusquedaFecha;
+		}
+		if(!empty($stringBusquedaCliente)){
+			if(!empty($stringFinal)) $stringFinal.=" && ";
+			$stringFinal.=$stringBusquedaCliente;
+		}
+		if(!empty($stringBusquedaArchivo)){
+			if(!empty($stringFinal)) $stringFinal.=" && ";
+			$stringFinal.=$stringBusquedaArchivo;
+		}
+		if(!empty($stringBusquedaCobrador)){
+			if(!empty($stringFinal)) $stringFinal.=" && ";
+			$stringFinal.=$stringBusquedaCobrador;
+		}
+		if(!empty($stringBusquedaEnExcel)){
+			if(!empty($stringFinal)) $stringFinal.=" && ";
+			$stringFinal.=$stringBusquedaEnExcel;
+		}
+
+		return($stringFinal);
+	}
+
+	private function hacerStringFecha($fechaInicial,$fechaFinal)
+	{
+		if(!empty($fechaInicial) && !empty($fechaFinal) ){
+			$fechaInicialMy = $this->hacerFechaMysql($fechaInicial);
+			$fechaFinalMy = $this->hacerFechaMysql($fechaFinal);
+			$stringBusquedaFecha = " fechaRegistro >= '".$fechaInicialMy."'  && fechaRegistro <= '".$fechaFinalMy."' " ;
+		}else if(!empty($fechaFinal)){
+			$fechaFinalMy = $this->hacerFechaMysql($fechaFinal);
+			$stringBusquedaFecha = " fechaRegistro <= '".$fechaFinalMy."' " ;
+		}else{
+			$fechaInicialMy = $this->hacerFechaMysql($fechaInicial);
+			$stringBusquedaFecha = " fechaRegistro >= '".$fechaInicialMy."' " ;
+		}
+
+		return($stringBusquedaFecha);
+	}
+
+
+	private function validarFecha($fecha) // 06-03-2018
+	{
+
+		$cachos = explode('-',$fecha);
+		if(count($cachos)==3){
+			$dia = $cachos[0];
+			$mes = $cachos[1];
+			$ano = $cachos[2];
+			if ($dia<1 or $mes<1 or strlen($ano)!=4){
+				$resultado=0;
+			}else{
+				$dia =(strlen($dia)==1) ? '0'.$dia : $dia;
+				$mes =(strlen($mes)==1) ? '0'.$mes : $mes;
+				$resultado=(checkdate ($mes,$dia,$ano )) ? $dia."-".$mes."-".$ano :'0';
+			}
+		}else{
+			$resultado=0;
+		}
+
+		return($resultado);
+	}
+
+	private function hacerFechaMysql($fecha)
+	{
+		$cachos=explode('-',$fecha);
+		$fechaMy = $cachos[2].'-'.$cachos[1].'-'.$cachos[0];
+		return($fechaMy);
+	}
+
+	public function formatoFechaH($fecha){
+		$cachos = explode('-',$fecha);
+		$dia = $cachos[2];
+		$mes = $cachos[1];
+		$ano = $cachos[0];
+		return($dia.'-'.$mes.'-'.$ano);
 	}
 }

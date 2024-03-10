@@ -21,7 +21,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-6">
-                    <a href="{{ route('pago.regresarLista',[$pago->id]) }}" class="">
+                    <a href="{{ route('pago.regresarLista') }}" class="">
                         <img src="{{ asset('images/flechaIzq.jpg') }}" alt="" width="15px">
                     </a>
                 </div>

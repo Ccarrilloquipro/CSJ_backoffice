@@ -20,13 +20,18 @@
             <div class="row">
                 <div class="col-lg-12">
 
-                    <div class="alert alert-info">
-                        Lista
-                    </div>
-
                     <div class="card">
-                        <div class="card-body p-0">
+                        <div class="card-header  text-white  bg-gradient-olive">
+                            <h3 class="card-title">Cobradores</h3>
+{{--                            <div class="card-tools">--}}
+{{--                                <button type="button" class="btn btn-tool" data-card-widget="collapse" >--}}
+{{--                                    <i class="fas fa-plus"></i>--}}
+{{--                                </button>--}}
+{{--                            </div>--}}
+                        </div>
 
+
+                        <div class="card-body p-0">
                             <table class="table">
                                 <thead>
                                 <tr>
@@ -35,7 +40,9 @@
                                     <th>Materno</th>
                                     <th>id Persona en San Juan</th>
                                     <th>Activo</th>
-                                    <th></th>
+                                    <th>
+                                        <a href="{{ route('cobrador.nuevo') }}" class="btn btn-xs bg-success">Agregar</a>
+                                    </th>
                                 </tr>
                                 </thead>
                                 <tbody>

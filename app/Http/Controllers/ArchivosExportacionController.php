@@ -13,7 +13,8 @@ class ArchivosExportacionController extends Controller
      */
     public function index()
     {
-        //
+		$archivos = ArchivosExportacion::all();
+		return view('users.lista', compact('archivos'));
     }
 
     /**

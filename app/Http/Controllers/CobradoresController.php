@@ -123,4 +123,10 @@ class CobradoresController extends Controller
 	{
 
 	}
+
+	public function nuevo()
+	{
+		$cobrador = new Cobradores;
+		return view('cobradores.ficha')->with(['cobrador' => $cobrador]);
+	}
 }

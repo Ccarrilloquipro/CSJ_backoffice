@@ -20,61 +20,48 @@
                 </a>
             </li>
 
-            <li class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="nav-icon fas fa-circle nav-icon"></i>
-                    <p>
-                        Pagos
-                        <i class="fas fa-angle-left right"></i>
-                    </p>
-                </a>
-                <ul class="nav nav-treeview" style="display: none;">
-                    <li class="nav-item">
-                        <a href="{{ route('pagos.index') }}" class="nav-link">
-                            <i class="far fa-circle nav-icon"></i>
-                            <p>Relación</p>
-                        </a>
-                    </li>
+{{--            <li class="nav-item">--}}
+{{--                <a href="#" class="nav-link">--}}
+{{--                    <i class="nav-icon fas fa-circle nav-icon"></i>--}}
+{{--                    <p>--}}
+{{--                        Pagos--}}
+{{--                        <i class="fas fa-angle-left right"></i>--}}
+{{--                    </p>--}}
+{{--                </a>--}}
+{{--                <ul class="nav nav-treeview" style="display: none;">--}}
 {{--                    <li class="nav-item">--}}
-{{--                        <a href="{{ route('cobros.alta') }}" class="nav-link">--}}
+{{--                        <a href="{{ route('pagos.index') }}" class="nav-link">--}}
+{{--                            <i class="far fa-circle nav-icon"></i>--}}
+{{--                            <p>Relación</p>--}}
+{{--                        </a>--}}
+{{--                    </li>--}}
+{{--                </ul>--}}
+{{--            </li>--}}
+
+{{--            <li class="nav-item">--}}
+{{--                <a href="#" class="nav-link">--}}
+{{--                    <i class="nav-icon fas fa-circle nav-icon"></i>--}}
+{{--                    <p>--}}
+{{--                        Cobradores--}}
+{{--                        <i class="fas fa-angle-left right"></i>--}}
+{{--                    </p>--}}
+{{--                </a>--}}
+{{--                <ul class="nav nav-treeview" style="display: none;">--}}
+{{--                    <li class="nav-item">--}}
+{{--                        <a href="{{ route('cobrador.index') }}" class="nav-link">--}}
+{{--                            <i class="far fa-circle nav-icon"></i>--}}
+{{--                            <p>Relación</p>--}}
+{{--                        </a>--}}
+{{--                    </li>--}}
+{{--                    <li class="nav-item">--}}
+{{--                        <a href="{{ route('cobrador.alta') }}" class="nav-link">--}}
 {{--                            <i class="far fa-circle nav-icon"></i>--}}
 {{--                            <p>Alta</p>--}}
 {{--                        </a>--}}
 {{--                    </li>--}}
-                </ul>
-            </li>
-
-            <li class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="nav-icon fas fa-circle nav-icon"></i>
-                    <p>
-                        Cobradores
-                        <i class="fas fa-angle-left right"></i>
-                    </p>
-                </a>
-                <ul class="nav nav-treeview" style="display: none;">
-                    <li class="nav-item">
-                        <a href="{{ route('cobrador.index') }}" class="nav-link">
-                            <i class="far fa-circle nav-icon"></i>
-                            <p>Relación</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('cobrador.alta') }}" class="nav-link">
-                            <i class="far fa-circle nav-icon"></i>
-                            <p>Alta</p>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-{{--            <li class="nav-item">--}}
-{{--                <a href="{{ route('clientes.index') }}" class="nav-link">--}}
-{{--                    <i class="nav-icon fas fa-users"></i>--}}
-{{--                    <p>--}}
-{{--                        {{ __('Clientes') }}--}}
-{{--                    </p>--}}
-{{--                </a>--}}
+{{--                </ul>--}}
 {{--            </li>--}}
+
 
             <li class="nav-item">
                 <a href="{{ route('users.index') }}" class="nav-link">
@@ -84,7 +71,30 @@
                     </p>
                 </a>
             </li>
-
+            <li class="nav-item">
+                <a href="{{ route('cobrador.index') }}" class="nav-link">
+                    <i class="nav-icon fas fa-users"></i>
+                    <p>
+                        {{ __('Cobradores') }}
+                    </p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('pagos.index') }}" class="nav-link">
+                    <i class="nav-icon fas fa-users"></i>
+                    <p>
+                        {{ __('Pagos') }}
+                    </p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('archivos.index') }}" class="nav-link">
+                    <i class="nav-icon fas fa-users"></i>
+                    <p>
+                        {{ __('Archivos excel') }}
+                    </p>
+                </a>
+            </li>
 {{--            <li class="nav-item">--}}
 {{--                <a href="{{ route('about') }}" class="nav-link">--}}
 {{--                    <i class="nav-icon far fa-address-card"></i>--}}

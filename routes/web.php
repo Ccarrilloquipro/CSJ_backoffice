@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CobradoresController;
 
 use App\Http\Controllers\PagosController;
-
+use App\Http\Controllers\ArchivosExportacionController;
+use App\Http\Controllers\UserController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -29,7 +30,10 @@ Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('ho
 Route::middleware('auth')->group(function () {
     Route::view('about', 'about')->name('about');
 
-    Route::get('users', [\App\Http\Controllers\UserController::class, 'index'])->name('users.index');
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+	Route::get('administrador/nuevo', [UserController::class, 'nuevo'])->name('administrador.nuevo');
+	Route::get('administrador/ficha/{id}', [UserController::class, 'ficha'])->name('administrador.ficha');
+//	Route::post('administrador/validar', [UserController::class, 'validar'])->name('administrador.validar');
 
     Route::get('profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
     Route::put('profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
@@ -40,9 +44,17 @@ Route::middleware('auth')->group(function () {
 
 
 });
+
+
+Route::post('administrador/grabar', [UserController::class, 'grabar'])->name('administrador.grabar');
+
+
 Route::post('cobrador/update', [CobradoresController::class, 'cobradorUpdate'])->name('cobrador.update');
 Route::post('cobrador/grabar', [CobradoresController::class, 'grabarNuevo'])->name('cobrador.grabar');
 Route::get('cobrador/ficha/{id}', [CobradoresController::class, 'ficha'])->name('cobrador.ficha');
+Route::get('cobrador/nuevo', [CobradoresController::class, 'nuevo'])->name('cobrador.nuevo');
+
+
 Route::get('pagos', [PagosController::class, 'index'])->name('pagos.index');
 Route::get('pagos/ficha/{id}', [PagosController::class, 'ficha'])->name('pago.ficha');
 //Route::post('pagos/ficha/{id}', [PagosController::class, 'ficha'])->name('pago.ficha');
@@ -51,6 +63,8 @@ Route::get('pagos/marcarTodos', [PagosController::class, 'marcarTodos'])->name('
 Route::get('pagos/quitarTodos', [PagosController::class, 'quitarTodos'])->name('pago.quitarTodos');
 Route::post('pago/submitLista', [PagosController::class, 'submitLista'])->name('pago.submitLista');
 Route::get('pago/regresarLista', [PagosController::class, 'regresarLista'])->name('pago.regresarLista');
+Route::post('pago/filtrarLista', [PagosController::class, 'filtrarLista'])->name('pago.filtrarLista');
 
 
 
+Route::get('archivos', [ArchivosExportacionController::class, 'index'])->name('archivos.index');
