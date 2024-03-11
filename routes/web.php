@@ -40,19 +40,19 @@ Route::middleware('auth')->group(function () {
 
 	// clientes
 	Route::get('cobrador', [CobradoresController::class, 'index'])->name('cobrador.index');
-	Route::get('cobrador/alta', [CobradoresController::class, 'alta'])->name('cobrador.alta');
+
 
 
 });
-
-
 Route::post('administrador/grabar', [UserController::class, 'grabar'])->name('administrador.grabar');
 
-
-Route::post('cobrador/update', [CobradoresController::class, 'cobradorUpdate'])->name('cobrador.update');
-Route::post('cobrador/grabar', [CobradoresController::class, 'grabarNuevo'])->name('cobrador.grabar');
+//cobrador vigentes
 Route::get('cobrador/ficha/{id}', [CobradoresController::class, 'ficha'])->name('cobrador.ficha');
 Route::get('cobrador/nuevo', [CobradoresController::class, 'nuevo'])->name('cobrador.nuevo');
+Route::post('cobrador/grabar', [CobradoresController::class, 'grabar'])->name('cobrador.grabar');
+
+//cobrador por definir vigencia
+
 
 
 Route::get('pagos', [PagosController::class, 'index'])->name('pagos.index');
@@ -68,3 +68,4 @@ Route::post('pago/filtrarLista', [PagosController::class, 'filtrarLista'])->name
 
 
 Route::get('archivos', [ArchivosExportacionController::class, 'index'])->name('archivos.index');
+Route::get('archivos/detalle/{id}', [ArchivosExportacionController::class, 'detalle'])->name('archivos.detalle');

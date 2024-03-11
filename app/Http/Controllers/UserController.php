@@ -33,11 +33,10 @@ class UserController extends Controller
 	public function grabar(Request $request)
 	{
 		$id = $request->id;
-
 		if ($id == null){
-			$this->agregarUsuario($request);
+			$this->agregarAdministrador($request);
 		}else{
-			$this->editarUsuario($request);
+			$this->editarAdministrador($request);
 		}
 		$sql = "select id, name , email ,usuario,activo from users where idTipoUsuario=1";
 		$administradores = DB::connection('mysql')->select($sql);
@@ -45,7 +44,7 @@ class UserController extends Controller
 		return view('users.lista', compact('administradores'));
 	}
 
-	private function agregarUsuario(Request $request)
+	private function agregarAdministrador(Request $request)
 	{
 		$fields = $request->validate([
 			'name' => 'required|string',
@@ -64,7 +63,7 @@ class UserController extends Controller
 		]);
 	}
 
-	private function editarUsuario(Request $request)
+	private function editarAdministrador(Request $request)
 	{
 		$fields = $request->validate([
 			'name' => 'required|string',
@@ -80,5 +79,7 @@ class UserController extends Controller
                  where id = ".$request->id;
 		DB::connection('mysql')->update($sql);
 	}
+
+
 
 }

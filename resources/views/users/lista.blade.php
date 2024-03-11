@@ -12,7 +12,6 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-12">
-
                     <div class="card">
                         <div class="card-header  text-white  bg-gradient-olive">
                             <h3 class="card-title">Administradores</h3>

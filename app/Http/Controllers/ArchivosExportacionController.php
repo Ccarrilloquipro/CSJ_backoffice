@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreArchivosExportacionRequest;
 use App\Http\Requests\UpdateArchivosExportacionRequest;
 use App\Models\ArchivosExportacion;
+use Illuminate\Support\Facades\DB;
 
 class ArchivosExportacionController extends Controller
 {
@@ -13,8 +14,12 @@ class ArchivosExportacionController extends Controller
      */
     public function index()
     {
-		$archivos = ArchivosExportacion::all();
-		return view('users.lista', compact('archivos'));
+//		$archivos = ArchivosExportacion::all();
+		$sql = "select archivosExportacion.*,users.name as generador
+		from sanJuan.archivosExportacion
+		left join users on archivosExportacion.idGenerador= users.id";
+		$archivos = DB::connection('mysql')->select($sql);
+		return view('archivos.lista', compact('archivos'));
     }
 
     /**
@@ -64,4 +69,25 @@ class ArchivosExportacionController extends Controller
     {
         //
     }
+
+
+	// jom
+
+	public function detalle($id)
+	{
+
+		$sql = "select archivo from sanJuan.archivosExportacion where id = $id";
+		$resultado = DB::connection('mysql')->select($sql);
+		$archivo = $resultado[0]->archivo;
+		$sql = "select pagos.*,date_format(pagos.fechaRegistro,'%d-%m-%Y') as fechaDePago, 
+			cobradores.nombre as nombreCobrador, cobradores.id as idCobradorLocal,
+			archivosExportacion.archivo
+			from pagos 
+			left join cobradores on cobradores.idPersona = pagos.idCobrador
+			left join archivosExportacion on archivosExportacion.id = pagos.idArchivoExportacion
+			
+			where idArchivoExportacion = $id";
+		$pagos = DB::connection('mysql')->select($sql);
+		return view('archivos.detalle', compact('pagos'));
+	}
 }

@@ -4,18 +4,19 @@
 
 {{--@dd($menuCobradores)--}}
     <!-- Content Header (Page header) -->
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">{{ __('Pagos') }}</h1>
-                </div><!-- /.col -->
-            </div><!-- /.row -->
-        </div><!-- /.container-fluid -->
-    </div>
+{{--    <div class="content-header">--}}
+{{--        <div class="container-fluid">--}}
+{{--            <div class="row mb-2">--}}
+{{--                <div class="col-sm-6">--}}
+{{--                    <h1 class="m-0">{{ __('Pagos') }}</h1>--}}
+{{--                </div><!-- /.col -->--}}
+{{--            </div><!-- /.row -->--}}
+{{--        </div><!-- /.container-fluid -->--}}
+{{--    </div>--}}
     <!-- /.content-header -->
 
     <!-- Main content -->
+    <br>
     <div class="content">
         <div class="container-fluid">
             {{--primera seccion filtro--}}
