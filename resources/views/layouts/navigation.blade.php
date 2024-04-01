@@ -65,9 +65,9 @@
 
             <li class="nav-item">
                 <a href="{{ route('users.index') }}" class="nav-link">
-                    <i class="nav-icon fas fa-users"></i>
+                    <i class="nav-icon fas fa-user"></i>
                     <p>
-                        {{ __('Usuarios') }}
+                        {{ __('Administradores') }}
                     </p>
                 </a>
             </li>
@@ -81,7 +81,7 @@
             </li>
             <li class="nav-item">
                 <a href="{{ route('pagos.index') }}" class="nav-link">
-                    <i class="nav-icon fas fa-users"></i>
+                    <i class="nav-icon fas fa-credit-card"></i>
                     <p>
                         {{ __('Pagos') }}
                     </p>
@@ -89,12 +89,20 @@
             </li>
             <li class="nav-item">
                 <a href="{{ route('archivos.index') }}" class="nav-link">
-                    <i class="nav-icon fas fa-users"></i>
+                    <i class="nav-icon fas fa-rss"></i>
                     <p>
                         {{ __('Archivos excel') }}
                     </p>
                 </a>
             </li>
+{{--            <li class="nav-item">--}}
+{{--                <a methods="post" href="{{ route('pagos.trerCobros',[45449]) }}" class="nav-link">--}}
+{{--                    <i class="nav-icon fas fa-users"></i>--}}
+{{--                    <p>--}}
+{{--                        {{ __('temporal') }}--}}
+{{--                    </p>--}}
+{{--                </a>--}}
+{{--            </li>--}}
 {{--            <li class="nav-item">--}}
 {{--                <a href="{{ route('about') }}" class="nav-link">--}}
 {{--                    <i class="nav-icon far fa-address-card"></i>--}}

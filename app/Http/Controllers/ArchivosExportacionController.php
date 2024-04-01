@@ -6,6 +6,7 @@ use App\Http\Requests\StoreArchivosExportacionRequest;
 use App\Http\Requests\UpdateArchivosExportacionRequest;
 use App\Models\ArchivosExportacion;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ArchivosExportacionController extends Controller
 {
@@ -16,7 +17,7 @@ class ArchivosExportacionController extends Controller
     {
 //		$archivos = ArchivosExportacion::all();
 		$sql = "select archivosExportacion.*,users.name as generador
-		from sanJuan.archivosExportacion
+		from archivosExportacion
 		left join users on archivosExportacion.idGenerador= users.id";
 		$archivos = DB::connection('mysql')->select($sql);
 		return view('archivos.lista', compact('archivos'));
@@ -76,7 +77,7 @@ class ArchivosExportacionController extends Controller
 	public function detalle($id)
 	{
 
-		$sql = "select archivo from sanJuan.archivosExportacion where id = $id";
+		$sql = "select archivo from archivosExportacion where id = $id";
 		$resultado = DB::connection('mysql')->select($sql);
 		$archivo = $resultado[0]->archivo;
 		$sql = "select pagos.*,date_format(pagos.fechaRegistro,'%d-%m-%Y') as fechaDePago, 
@@ -90,4 +91,25 @@ class ArchivosExportacionController extends Controller
 		$pagos = DB::connection('mysql')->select($sql);
 		return view('archivos.detalle', compact('pagos'));
 	}
+
+	public function exportar($nombreArchivo)
+	{
+		$filepath = Storage::path('tmp/'.$nombreArchivo);
+
+		// Download
+		if(file_exists($filepath)) {
+			header('Content-Description: File Transfer');
+			header('Content-Type: application/octet-stream');
+			header('Content-Disposition: attachment; filename="'.basename($filepath).'"');
+			header('Expires: 0');
+			header('Cache-Control: must-revalidate');
+			header('Pragma: public');
+			header('Content-Length: ' . filesize($filepath));
+			flush(); // Flush system output buffer
+			readfile($filepath);
+			//unlink($filepath);
+			die();
+		}
+	}
+
 }

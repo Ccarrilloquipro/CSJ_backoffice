@@ -30,10 +30,8 @@
                             {{--                                </button>--}}
                             {{--                            </div>--}}
                         </div>
-
-
-                        <div class="card-body p-0">
-                            <table class="table">
+                        <div class="card-body p-0 table-responsive p-0">
+                            <table class="table table-hover text-nowrap">
                                 <thead>
                                 <tr>
                                     <th></th>
@@ -45,10 +43,13 @@
                                 </thead>
                                 <tbody>
                                 @foreach($archivos as $archivo)
+                                    @php
+										$nombreArchivo = $archivo->archivo;
+                                    @endphp
                                     <tr>
                                         <td></td>
                                         <td>{{ $archivo->fechaCreacion }}</td>
-                                        <td>{{ $archivo->archivo }}</td>
+                                        <td><a href="{{ route('archivos.exportar',[$nombreArchivo]) }}" class="">{{$archivo->archivo}}</a></td>
                                         <td>{{ $archivo->generador }}</td>
                                         <td><a href="{{ route('archivos.detalle',[$archivo->id]) }}" class="btn btn-xs bg-success">Detalles</a></td>
                                     </tr>
@@ -57,10 +58,7 @@
                             </table>
                         </div>
                         <!-- /.card-body -->
-
-
                     </div>
-
                 </div>
             </div>
             <!-- /.row -->

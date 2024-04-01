@@ -69,6 +69,14 @@
                             </div>
                             <div class="row">
                                 <div class="col-6 font-weight-bold">
+                                    Recibo
+                                </div>
+                                <div class="col-6 font-weight-normal">
+                                    {{$pago->recibo}}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 font-weight-bold">
                                     Monto cobrado / acordado
                                 </div>
                                 <div class="col-6 font-weight-normal">

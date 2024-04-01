@@ -69,3 +69,14 @@ Route::post('pago/filtrarLista', [PagosController::class, 'filtrarLista'])->name
 
 Route::get('archivos', [ArchivosExportacionController::class, 'index'])->name('archivos.index');
 Route::get('archivos/detalle/{id}', [ArchivosExportacionController::class, 'detalle'])->name('archivos.detalle');
+
+// borrar
+//Route::post('pagos/traerCobros', [PagosController::class, 'getCobros'])->name('pagos.traerCobros');
+//Route::post('pagos/traerFoto', [PagosController::class, 'traerFoto'])->name('pagos.traerFoto');
+//Route::post('pagos/traerOrden', [PagosController::class, 'traerOrden'])->name('pagos.traerOrden');
+//Route::post('pagos/buscarCobros', [PagosController::class, 'buscarCobros'])->name('pagos.buscarCobros');
+
+Route::get('archivos/exportar/{nombreArchivo}', [ArchivosExportacionController::class, 'exportar'])->name('archivos.exportar');
+
+
+

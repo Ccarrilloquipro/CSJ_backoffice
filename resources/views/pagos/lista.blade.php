@@ -1,24 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-
-{{--@dd($menuCobradores)--}}
+{{--@dd($arrPagos)--}}
     <!-- Content Header (Page header) -->
-{{--    <div class="content-header">--}}
-{{--        <div class="container-fluid">--}}
-{{--            <div class="row mb-2">--}}
-{{--                <div class="col-sm-6">--}}
-{{--                    <h1 class="m-0">{{ __('Pagos') }}</h1>--}}
-{{--                </div><!-- /.col -->--}}
-{{--            </div><!-- /.row -->--}}
-{{--        </div><!-- /.container-fluid -->--}}
-{{--    </div>--}}
+
     <!-- /.content-header -->
 
     <!-- Main content -->
     <br>
     <div class="content">
         <div class="container-fluid">
+
             {{--primera seccion filtro--}}
             <div class="row">
                 <div class="col-lg-12">
@@ -31,11 +23,11 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="card-body p-0">
+                        <div class="card-body p-0 table-responsive p-0">
                             <form method="post" action="{{ route('pago.filtrarLista') }}">
                                 <div class="row">
                                     <div class="col-12 text-sm-left">
-                                        <table class="table">
+                                        <table class="table table-hover text-nowrap">
                                             <thead>
                                                 <tr>
                                                     <th>Fecha inicial:</th>
@@ -92,26 +84,77 @@
                     </div>
                 </div>
             </div>
-
-
-
-
-
-
             {{--segunda seccion datos--}}
             <div class="row">
                 <div class="col-lg-12">
                     <div class="alert alert-info">
-                        Relación de pagos
+                        Relación de pagos     -      Total cobrado en la lista: ${{number_format($total,2,".",",")}}      -       Comisión: ${{number_format($comision,2,".",",")}}
                     </div>
                 </div>
+
             </div>
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
-                        <div class="card-body p-0">
+                        <div class="card-body p-0 table-responsive p-0">
                             <form method="post" action="{{ route('pago.submitLista') }}">
-                            <table class="table">
+
+
+                                @if(isset($errores) )
+                                    <div class="row">
+                                        <div class="col-3">&nbsp;</div>
+                                        <div class="col-6">
+                                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <h5 class="text-sm-left">
+                                                            Los siguientes pagos ya han sido incluidos en anteriores archivos.
+                                                        </h5>
+                                                    </div>
+                                                </div>
+                                                @for($x=0;$x<count($errores);$x++)
+                                                    <div class="row">
+                                                        <div class="col-2">&nbsp;</div>
+                                                        <div class="col-10">
+                                                            {{$errores[$x]}}
+                                                        </div>
+                                                    </div>
+                                                @endfor
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <h5 class="text-sm-left">
+                                                            Desea usted incluirlos en este archivo?.
+                                                        </h5>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <button type="button" class="btn btn-xs btn-danger" data-dismiss="alert" aria-label="Close">
+                                                            <span aria-hidden="true">Cancelar</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <button type="submit"  name="accion" class="btn btn-xs btn-success" value="excelValidado" >
+                                                            Generar excel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">&nbsp;</div>
+                                    </div>
+                                @endif
+
+
+
+
+
+
+
+                            <table class="table table-hover text-nowrap">
                                 <thead>
                                 <tr>
                                     <th style="horiz-align: left;vertical-align: bottom">
@@ -162,7 +205,7 @@
                                         <td>{{ $pago->nombreCliente }}</td>
                                         <td>{{ $pago->fechaDePago }}</td>
                                         <td>{{ $pago->montoCobradoEnVisita }}</td>
-                                        <td>{{ $pago->cobrado }}</td>
+                                        <td>{{ $pago->recibo }}</td>
                                         <td>{{ $enArchivo }}</td>
                                         <td>
                                             <button type="submit" name="accion" class="btn btn-xs bg-success" value="{{$pago->id}}" >
@@ -189,4 +232,28 @@
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->
+@endsection
+
+@section('scripts')
+{{--    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>--}}
+
+{{--    <script>--}}
+{{--        Swal.fire({--}}
+{{--            title: "Are you sure?",--}}
+{{--            text: "You won't be able to revert this!",--}}
+{{--            icon: "warning",--}}
+{{--            showCancelButton: true,--}}
+{{--            confirmButtonColor: "#3085d6",--}}
+{{--            cancelButtonColor: "#d33",--}}
+{{--            confirmButtonText: "Yes, delete it!"--}}
+{{--        }).then((result) => {--}}
+{{--            if (result.isConfirmed) {--}}
+{{--                Swal.fire({--}}
+{{--                    title: "Deleted!",--}}
+{{--                    text: "Your file has been deleted.",--}}
+{{--                    icon: "success"--}}
+{{--                });--}}
+{{--            }--}}
+{{--        });--}}
+{{--    </script>--}}
 @endsection

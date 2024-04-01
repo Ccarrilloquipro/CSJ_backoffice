@@ -40,6 +40,44 @@
                 @endforeach
             </div>
             <!-- /.row -->
+{{--            <div class="row">--}}
+{{--                <div class="col-12">--}}
+{{--                    <form method="post" action="{{ route('pagos.traerCobros') }}">--}}
+{{--                        <input type="hidden" name="idCobrador" value="45449">--}}
+{{--                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >Cobros</button>--}}
+{{--                        @csrf--}}
+{{--                    </form>--}}
+{{--                </div>--}}
+{{--            </div>--}}
+{{--            <div class="row">--}}
+{{--                <div class="col-12">--}}
+{{--                    <form method="post" action="{{ route('pagos.traerFoto') }}">--}}
+{{--                        <input type="hidden" name="idCliente" value="23117">--}}
+{{--                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >Foto</button>--}}
+{{--                        @csrf--}}
+{{--                    </form>--}}
+{{--                </div>--}}
+{{--            </div>--}}
+{{--            <div class="row">--}}
+{{--                <div class="col-12">--}}
+{{--                    <form method="post" action="{{ route('pagos.traerOrden') }}">--}}
+{{--                        <input type="hidden" name="idCuenta" value="9569">--}}
+{{--                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >orden</button>--}}
+{{--                        @csrf--}}
+{{--                    </form>--}}
+{{--                </div>--}}
+{{--            </div>--}}
+{{--            <div class="row">--}}
+{{--                <div class="col-12">--}}
+{{--                    <form method="post" action="{{ route('pagos.buscarCobros') }}">--}}
+{{--                        <input type="hidden" name="nombre" value="aquino">--}}
+{{--                        <input type="hidden" name="direccion" value="">--}}
+{{--                        <input type="hidden" name="cuenta" value="9635">--}}
+{{--                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >buscar</button>--}}
+{{--                        @csrf--}}
+{{--                    </form>--}}
+{{--                </div>--}}
+{{--            </div>--}}
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->

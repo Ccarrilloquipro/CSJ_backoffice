@@ -57,13 +57,14 @@
     <!-- Main Sidebar Container -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
         <!-- Brand Logo -->
-        <a href="/" class="brand-link">
+{{--        <a href="https://www.dedalo.com.mx" class="brand-link">--}}
+            <div class="brand-link">
             <img src="{{ asset('images/sj1024.png') }}" alt="AdminLTE Logo"
                  class="brand-image img-circle elevation-3"
                  style="opacity: .8">
             <span class="brand-text font-weight-bold">Cobros San Juan</span>
-        </a>
-
+            </div>
+{{--        </a>--}}
         @include('layouts.navigation')
     </aside>
 
@@ -87,10 +88,10 @@
     <footer class="main-footer">
         <!-- To the right -->
         <div class="float-right d-none d-sm-inline">
-            Tu imaginación es el límite
+        {{--Tu imaginación es el límite--}}
         </div>
         <!-- Default to the left -->
-        <strong>Copyright &copy; 2024 <a href="https://dedalo.com.mx">Dedalo</a>.</strong> Derechos reservados.
+        {{--<strong>Copyright &copy; 2024 <a href="https://dedalo.com.mx">Dedalo</a>.</strong> Derechos reservados.--}}
     </footer>
 </div>
 <!-- ./wrapper -->

@@ -17,9 +17,9 @@
 </head>
 <body class="hold-transition login-page">
 <div class="login-box">
-    <div class="login-logo">
-        <a href="/">{{ config('app.name', 'cic') }}</a>
-    </div>
+{{--    <div class="login-logo">--}}
+{{--        <a href="/">{{ config('app.name', 'cic') }}</a>--}}
+{{--    </div>--}}
     <!-- /.login-logo -->
     <div class="card">
         @yield('content')

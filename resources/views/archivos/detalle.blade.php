@@ -45,7 +45,7 @@
                                         <td>{{ $pago->nombreCliente }}</td>
                                         <td>{{ $pago->fechaDePago }}</td>
                                         <td>{{ $pago->montoCobradoEnVisita }}</td>
-                                        <td>{{ $pago->cobrado }}</td>
+                                        <td>{{ $pago->recibo }}</td>
                                     </tr>
                                 @endforeach
                                 </tbody>

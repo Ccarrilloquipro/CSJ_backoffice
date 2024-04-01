@@ -8,11 +8,13 @@ use App\Models\Pagos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Session;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-
+use DateTime;
+use DateInterval;
 
 
 class PagosController extends Controller
@@ -22,20 +24,16 @@ class PagosController extends Controller
      */
     public function index()
     {
-//		session()->forget('key');
-//		if (session()->has('key')) {
-//			// Key exists in the session
-//		}
-
 		$this->inicializarDatos();
 		$arrFiltros = session()->get('arrFiltros');
 		$this->pagosLista();
 
 		$pagos = session()->get('pagos');
+		$arrComisiones = $this->sumaComision($pagos);
 		$menuCobradores = session()->get('menuCobradores');
 		$menuEnArchivo = session()->get('menuEnArchivo');
 		$arrFiltros = session()->get('arrFiltros');
-		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros,'total'=>$arrComisiones['monto'],'comision'=>$arrComisiones['comision']]);
     }
 
     /**
@@ -160,13 +158,12 @@ class PagosController extends Controller
 			$pago->marcado = 1;
 		}
 		session()->put('pagos', $pagos);
-
-
 		$pagos = session()->get('pagos');
 		$menuCobradores = session()->get('menuCobradores');
 		$menuEnArchivo = session()->get('menuEnArchivo');
 		$arrFiltros = session()->get('arrFiltros');
-		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
+		$arrComisiones = $this->sumaComision($pagos);
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros,'total'=>$arrComisiones['monto'],'comision'=>$arrComisiones['comision']]);
 
 	}
 
@@ -180,9 +177,9 @@ class PagosController extends Controller
 		$menuCobradores = session()->get('menuCobradores');
 		$menuEnArchivo = session()->get('menuEnArchivo');
 		$arrFiltros = session()->get('arrFiltros');
-		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
+		$arrComisiones = $this->sumaComision($pagos);
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros,'total'=>$arrComisiones['monto'],'comision'=>$arrComisiones['comision']]);
 	}
-
 
 	private function pagosLista($stringBusqueda = ''){
 		if(!empty($stringBusqueda)) $stringBusqueda= " where ".$stringBusqueda;
@@ -196,11 +193,8 @@ class PagosController extends Controller
 			left join archivosExportacion on archivosExportacion.id = pagos.idArchivoExportacion
 			$stringBusqueda";
 		$pagos = DB::connection('mysql')->select($sql);
-		//if (session()->has('pagos'))  session()->forget('pagos');
 		session()->put('pagos', $pagos);
 	}
-
-
 
 	private function traerDatosLista($stringBusqueda = '')
 	{
@@ -237,7 +231,9 @@ class PagosController extends Controller
 		$menuCobradores = session()->get('menuCobradores');
 		$menuEnArchivo = session()->get('menuEnArchivo');
 		$arrFiltros = session()->get('arrFiltros');
-		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
+		$arrComisiones = $this->sumaComision($pagos);
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros,'total'=>$arrComisiones['monto'],'comision'=>$arrComisiones['comision']]);
+//		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
 	}
 
 	public function submitLista(Request $request)
@@ -253,14 +249,27 @@ class PagosController extends Controller
 				$textoSeleccionados.=$cachos[1];
 			}
 		}
+		$this->actualizarMarcados($arrSeleccionados);
 		switch ($request->accion){
 			case 'excel':
 				if(!empty($arrSeleccionados)){
-					$this->prepararExcel($textoSeleccionados);
+					$arrValidarEnviados = $this->evaluarPagosParaExcel($textoSeleccionados);
+					if(empty($arrValidarEnviados)){
+						$this->prepararExcel($textoSeleccionados);
+					}else{
+						$pagos = session()->get('pagos');
+						$menuCobradores = session()->get('menuCobradores');
+						$menuEnArchivo = session()->get('menuEnArchivo');
+						$arrFiltros = session()->get('arrFiltros');
+						$arrComisiones = $this->sumaComision($pagos);
+						return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros,'total'=>$arrComisiones['monto'],'comision'=>$arrComisiones['comision'],'errores'=>$arrValidarEnviados]);
+					}
 				}
 				break;
+			case 'excelValidado':
+				$this->prepararExcel($textoSeleccionados);
+				break;
 			default:
-				$this->actualizarMarcados($arrSeleccionados);
 				$id = $request->accion;
 				$pago = $this->traerDatosFicha($id);
 				return view('pagos.ficha')->with(['pago' => $pago]);
@@ -273,27 +282,41 @@ class PagosController extends Controller
 		$pagos = session()->get('pagos');
 		foreach ($pagos as $pago){
 			if(in_array($pago->id,$arrSeleccionados)) {
-				$pago->marcado == 1;
+				$pago->marcado = 1;
 			}else{
-				$pago->marcado == 0;
+				$pago->marcado = 0;
 			}
 		}
 		//session()->forget('pagos');
 		session()->put('pagos', $pagos);
 	}
 
-	private function prepararExcel($textoSeleccionados)
+	private function evaluarPagosParaExcel($textoSeleccionados)
 	{
-		$sql = "select date_format(pagos.fechaRegistro,'%d-%m-%Y') as fechaDePago,  pagos.idCuenta,  pagos.montoCobradoEnVisita, pagos.cobrado as recibo   
+		$sql = "select date_format(pagos.fechaRegistro,'%d-%m-%Y') as fechaDePago,  pagos.claveCuenta,  pagos.montoCobradoEnVisita, pagos.cobrado as recibo, enExcel ,nombreCliente  
 			from pagos 
 			left join cobradores on cobradores.idPersona = pagos.idCobrador
 			where pagos.id in ($textoSeleccionados)";
 		$resultado = DB::connection('mysql')->select($sql);
+		$arrValidarEnviados = array();
+		foreach ($resultado as $item){
+			if($item->enExcel==1) $arrValidarEnviados[]=$item->claveCuenta." - ".$item->nombreCliente." - $".number_format($item->montoCobradoEnVisita,2,'.',',');
+		}
+		return ($arrValidarEnviados);
+	}
+
+	private function prepararExcel($textoSeleccionados)
+	{
+		$sql = "select date_format(pagos.fechaRegistro,'%d-%m-%Y') as fechaDePago,  pagos.idCuenta,  pagos.montoCobradoEnVisita, pagos.recibo as recibo   
+			from pagos 
+			left join cobradores on cobradores.idPersona = pagos.idCobrador
+			where pagos.id in ($textoSeleccionados)";
+		$resultado = DB::connection('mysql')->select($sql);
+
 		$arrResultado = array();
 		foreach ($resultado as $item){
 			$arrResultado[]=array('fechaDePago'=>$item->fechaDePago,'cuenta'=>$item->idCuenta,'montoCobradoEnVisita'=>$item->montoCobradoEnVisita,'recibo'=>$item->recibo);
 		}
-
 		// hacer titulo
 		$nombreUsuario = Auth::user()->name;
 		$nombreNormalizado = $this->convertirAASCII($nombreUsuario);
@@ -337,15 +360,14 @@ class PagosController extends Controller
 		}
 
 		// generacion y grabado
-		//$file = urldecode($titulo.'.xlsx');
-		//if(preg_match('/^[^.][-a-z0-9_.]+[a-z]$/i', $file)) {
+		$file = urldecode($titulo.'.xlsx');
+		if(preg_match('/^[^.][-a-z0-9_.]+[a-z]$/i', $file)) {
 			$filepath = Storage::path('tmp/' . $file);
 			//$filepath = "tmp/".$file;
 			$writer = new Xlsx($spreadsheet);
 			//$fxls ='excel-file_1.xlsx';
 			$writer->save($filepath);
-
-		//}
+		}
 
 		// Download
 //		if(file_exists($filepath)) {
@@ -369,7 +391,7 @@ class PagosController extends Controller
 //		}
 	}
 
-	private function downloadExcel($filepath)
+	public function downloadExcel($filepath)
 	{
 		// Download
 		if(file_exists($filepath)) {
@@ -502,7 +524,8 @@ class PagosController extends Controller
 		$menuCobradores = session()->get('menuCobradores');
 		$menuEnArchivo = session()->get('menuEnArchivo');
 		$arrFiltros = session()->get('arrFiltros');
-		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros]);
+		$arrComisiones = $this->sumaComision($pagos);
+		return view('pagos.lista')->with(['arrPagos' => $pagos, 'menuCobradores' => $menuCobradores, 'menuEnArchivo' => $menuEnArchivo, 'arrFiltros' => $arrFiltros,'total'=>$arrComisiones['monto'],'comision'=>$arrComisiones['comision']]);
 	}
 
 	private function hacerStringBusqueda()
@@ -610,5 +633,502 @@ class PagosController extends Controller
 		$mes = $cachos[1];
 		$ano = $cachos[0];
 		return($dia.'-'.$mes.'-'.$ano);
+	}
+
+	// borrar
+
+	public function getCobros(Request $request)
+	{
+		$hoy = date('Y-m-d');
+		$arrCobros = array();
+		// todo: cuando se defina el campo donde esta le fecha de cobro cambiar query para filtrar por ese campo
+		$sql = "select core_cliente_aval.ID_COBRADOR as idCobrador,
+			core_cliente_aval.ID_CONTRATO as idContrato,
+			core_contrato.ID_CLIENTE as idCliente,
+			core_cuenta.ID_CUENTA as idCuenta,
+			core_cuenta.CLAVE_CUENTA as claveCuenta,
+			date_format(core_cuenta.FECHA_VENTA,'%d-%m-%Y') as fechaVenta,
+			core_cuenta.ID_TIPO_PAGO as idTipoPago,
+			core_cuenta.DIA_PAGO as diaPago,
+			core_cuenta.DIA_PAGO_A as diaPagoA,
+			core_cuenta.DIA_PAGO_B as diaPagoB,
+			core_cuenta.FECHA_PROXIMO_PAGO as fechaProximoPago, 
+			core_cuenta.MONTO_TOTAL as montoTotal,
+			core_cuenta.ENGANCHE as enganche,
+			core_cuenta.ABONO_ACORDADO as montoAbonoAcordado,
+			core_cuenta.FECHA_PRIMER_PAGO as fechaPrimerPago,
+			sum(core_saldo.MONTO_ABONO) as totalPagadoEnAbonos,
+			core_persona.ID_PERSONA as idPersona,
+       		concat(core_persona.NOMBRE,' ',core_persona.AP_MATERNO,' ',core_persona.AP_MATERNO) as nombreCliente 
+			from core_cliente_aval
+			left join core_contrato on core_contrato.ID_CONTRATO=core_cliente_aval.ID_CONTRATO
+			left join core_cuenta on core_cuenta.ID_CONTRATO=core_contrato.ID_CONTRATO
+			left join core_persona on core_persona.ID_PERSONA =core_contrato.ID_CLIENTE
+			left join core_saldo on core_saldo.ID_CUENTA=core_cuenta.ID_CUENTA
+			where core_cliente_aval.ID_COBRADOR=".$request->idCobrador." && core_cuenta.FECHA_PROXIMO_PAGO='".$hoy."' && core_cuenta.ACTIVO=1 group by core_cuenta.ID_CUENTA";
+
+		// having montoTotal-totalPagadoEnAbonos-enganche>0
+		$cobros = DB::connection('remoto')->select($sql);
+
+		foreach ($cobros as $cobro){
+			// evitar nulos en campos
+			$cobro->diaPago = ($cobro->diaPago == null) ? ' ' : $cobro->diaPago;
+
+
+
+			switch($cobro->idTipoPago){
+				case '30': //semanal
+					$periodicidadDePagoEnDias = 7;
+					break;
+				case '31': // quincenal
+					$periodicidadDePagoEnDias = 14;
+					break;
+				case '32': //mensual
+					$periodicidadDePagoEnDias = 30.4;
+					break;
+			}
+			// calcular fecha de liquidacion
+
+			$montoAPlazos = $cobro->montoTotal-$cobro->enganche;
+			$numeroDeAbonosTotales = ceil($montoAPlazos/$cobro->montoAbonoAcordado);
+			$abonosPagados = floor($cobro->totalPagadoEnAbonos/$cobro->montoAbonoAcordado);
+
+			$fechaInicial = new DateTime($cobro->fechaPrimerPago);
+			$fechaPrimerPagoH = $fechaInicial->format('d-m-Y'); // 5
+
+			$fechaHoy = new DateTime('NOW');
+			$diferenciaPrimerPagoYHoy = $fechaInicial->diff($fechaHoy);
+			$diasTranscurridos = $diferenciaPrimerPagoYHoy->days;
+
+			$pagosALaFecha = (floor($diasTranscurridos/$periodicidadDePagoEnDias) > ($numeroDeAbonosTotales) ) ? $numeroDeAbonosTotales : floor($diasTranscurridos/$periodicidadDePagoEnDias);
+			$pagosAtrasados = $pagosALaFecha-$abonosPagados; //8
+			$saldoAtrasado = $pagosAtrasados*$cobro->montoAbonoAcordado; // 9
+
+			$porcentajePagadoTmp = ($cobro->totalPagadoEnAbonos/$montoAPlazos)*100; // 7
+			$porcentajePagado = number_format((float)$porcentajePagadoTmp, 2, '.', ',');
+
+
+			$cantidadDeDiasDelPlazo = ceil($numeroDeAbonosTotales*$periodicidadDePagoEnDias);
+			$codigoParaDate = "P".$cantidadDeDiasDelPlazo."D";
+			$fechaTerminacionCredito = $fechaInicial;
+			$fechaTerminacionCredito->add(new DateInterval($codigoParaDate));
+			$fechaTerminacionCreditoH = $fechaTerminacionCredito->format('d-m-Y'); // 6
+
+			$fechaProximoPagoInt = new DateTime($cobro->fechaProximoPago);
+			$fechaProximoPagoH = $fechaProximoPagoInt->format('d-m-Y');
+
+			//calcular saldo
+			$saldo = $cobro->montoTotal-$cobro->totalPagadoEnAbonos-$cobro->enganche;
+
+			$pagoMinimo = $cobro->montoAbonoAcordado; // 10
+
+			// lista de pagos
+			$stringPagos='';
+			$sql1 = "select ID_CUENTA as idCuenta, NUMERO_PAGO as numeroPago, date_format(fecha_pago,'%d-%m-%Y') as fechaPago, RECIBO_TIENDA as reciboTienda, MONTO_ABONO as montoAbono, MONTO_SALDO as montoSaldo from core_saldo where ID_CUENTA = ".$cobro->idCuenta." order by NUMERO_PAGO";
+			$resultados = DB::connection('remoto')->select($sql1);
+			foreach ($resultados as $resultado){
+				if(!empty($stringPagos)) $stringPagos.='y';
+				$stringPagos.=$resultado->numeroPago." ".$resultado->fechaPago." ".$resultado->reciboTienda." ".$resultado->montoAbono." ".$resultado->montoSaldo;
+			}
+
+
+			//$arrAbonos = DB::connection('remoto')->select($sql1); // 13
+			$sql2 = "select max(NUMERO_PAGO) as ultimoAbono from core_saldo where ID_CUENTA = ".$cobro->idCuenta;
+			$resultados = DB::connection('remoto')->select($sql2);
+			foreach ($resultados as $resultado){
+				$ultimoAbono = 	$resultado->ultimoAbono;
+			}
+
+			// productos
+			$sql3 = "select sc.DESCRIPCION_CAT_INFORMACION as productos from core_mercancia
+				left join sec_cat_catalogo_informacion sc on sc.ID_SEC_CAT_INFORMACION = core_mercancia.ID_MERCANCIA
+				where core_mercancia.ID_CUENTA = ". $cobro->idCuenta;
+			$resultados = DB::connection('remoto')->select($sql3);
+			$productos = ''; // 12
+			foreach ($resultados as $resultado){
+				if(!empty($productos)) $productos.=", ";
+				$productos.=$resultado->productos;
+			}
+
+			// pronto pago
+			$stringProntoPago='';
+			$sql4 = "select ID_CUENTA as idCuenta, PLAZO as plazo,PRECIO as precio, DATE_FORMAT(FECHA, '%d-%m-%Y') as fecha from core_credicontado where ID_CUENTA = ".$cobro->idCuenta. " order by plazo";
+			$arrProntoPago = array(); // 14 - 15
+			$resultados = DB::connection('remoto')->select($sql4);
+			foreach ($resultados as $resultado){
+				$arrProntoPago[] = array('idCuenta' => $resultado->idCuenta,'plazo' => $resultado->plazo,'precio'=>$resultado->precio,'fecha'=>$resultado->fecha);
+				if(!empty($stringProntoPago)) $stringProntoPago.='y';
+				$stringProntoPago.=$resultado->fecha." ".$resultado->precio;
+			}
+
+
+			// direccion
+			$fotoFachada = '';
+			$sql4="select core_direccion.ID_DIRECCION,
+			core_direccion.CALLE,
+			core_direccion.NUMERO_EXTERIOR,
+			core_direccion.NUMERO_INTERIOR,
+			core_direccion.COLONIA,
+			core_direccion.DELEGACION,
+			core_direccion.MUNICIPIO,
+			core_direccion.REFERENCIA_CALLES,
+			core_direccion.CODIGO_POSTAL from core_direccion where ID_SUJETO = ".$cobro->idCliente;
+			$direcciones = DB::connection('remoto')->select($sql4);
+			foreach ($direcciones as $direccion) {
+				$idDireccion = $direccion->ID_DIRECCION;
+				$calle = ($direccion->CALLE == null) ? ' ' : $direccion->CALLE;
+				$no_ext = ($direccion->NUMERO_EXTERIOR == null) ? ' ' : $direccion->NUMERO_EXTERIOR;
+				$no_int = ($direccion->NUMERO_INTERIOR == null) ? ' ' : $direccion->NUMERO_INTERIOR;
+				$colonia = ($direccion->COLONIA == null) ? ' ' : $direccion->COLONIA;
+				$delegacion = ($direccion->DELEGACION == null) ? '6RXG+WP' : $direccion->DELEGACION.' 6RXG+WP';
+				$municipio = ($direccion->MUNICIPIO == null) ? ' ' : $direccion->MUNICIPIO;
+				$referencias = ($direccion->REFERENCIA_CALLES == null) ? ' ' : $direccion->REFERENCIA_CALLES;
+				$cp = ($direccion->CODIGO_POSTAL == null) ? ' ' : $direccion->CODIGO_POSTAL;
+			}
+			// todo: aqui se busca la ruta de las imagenes de credencial y de fachada
+//			$sql2 = "select IMAGEN as imagen from core_imagen where ID_CLIENTE= ". $cobro->idCliente." && ID_TIPO_IMAGEN = 1 ";
+//			$foto = DB::connection('remoto')->select($sql2);
+//			foreach ($foto as $fotoDireccion) {
+//				$fotoFachada = $fotoDireccion->imagen;
+//			}
+			$montoTotal = floatval($cobro->montoTotal);
+			$montoAbonoAcordado = floatval($cobro->montoAbonoAcordado);
+
+			//imagenes
+				//ife = 2
+				// foto domicilio 1
+
+
+
+
+
+			// traer el orden
+			$sql5a = "select max(orden) as maximo from orden";
+			$maximoOrdenTmp = DB::connection('mysql')->select($sql5a);
+			if(!empty($maximoOrdenTmp)) {
+				$maximo = $maximoOrdenTmp[0]->maximo + 1;
+			}else{
+				$maximo = 1;
+			}
+
+			$sql5="select orden from orden where idCuenta=".$cobro->idCuenta;
+			$ordenTmp = DB::connection('mysql')->select($sql5);
+			if(!empty($ordenTmp)){
+				$ordenDeItem = $ordenTmp[0]->orden;
+			}else{
+				$sql6 = "insert into orden set idCuenta = ".$cobro->idCuenta.",orden = $maximo";
+				DB::connection('mysql')->select($sql6);
+				$ordenDeItem = $maximo;
+				$maximo++;
+			}
+			$arrCobros[] = array(
+				'idCobrador' => $cobro->idCobrador,
+				'idContrato' => $cobro->idContrato,
+				'idCliente' => $cobro->idCliente,
+				'idCuenta' => $cobro->idCuenta,
+				'fechaVenta' => $cobro->fechaVenta,
+				'claveCuenta' => $cobro->claveCuenta,
+				'idTipoPago' => $cobro->idTipoPago,
+				'diaPago' => $cobro->diaPago,
+				'diaPagoA' => $cobro->diaPagoA,
+				'diaPagoB' => $cobro->diaPagoB,
+				'fechaProximoPago' => $fechaProximoPagoH,
+				'idPersona' => $cobro->idPersona,
+				'nombreCliente' => $cobro->nombreCliente,
+				'idDireccion' => $idDireccion,
+				'calle' => $calle,
+				'no_ext' => $no_ext,
+				'no_int' => $no_int,
+				'colonia' => $colonia,
+				'delegacion' => $delegacion,
+				'municipio' => $municipio,
+				'referencias' => $referencias,
+				'cp' => $cp,
+				'orden' => $ordenDeItem,
+				'cobrado' => 0,
+				'subido' => 0,
+				'fotoIdentificacion' => 'ife.jpg',
+				'fotoFachada' => 'fachada.png',
+				'montoCobradoEnVisita' => 0.00,
+				'fechaSiguientePago' => '',
+				'nota' => '',
+				'visitado' => 0,
+				'montoTotal' => $montoTotal,
+				'montoAbonoAcordado' => $montoAbonoAcordado,
+				'fechaPrimerPago' => $fechaPrimerPagoH,
+				'fechaTerminacionCredito' => $fechaTerminacionCreditoH,
+				'saldo' => $saldo,
+				'porcentajePagado' => $porcentajePagado,
+				'pagosAtrasados' => $pagosAtrasados,
+				'saldoAtrasado' => $saldoAtrasado,
+				'productos' => $productos,
+				'prontoPago' => $stringProntoPago,
+				'relacionPagos' => $stringPagos
+			);
+
+			// campos dejados fuera del arreglo
+			//'diasTranscurridos' => $diasTranscurridos,
+			//'enganche' => $cobro->enganche,
+			//'montoAPlazos' => $montoAPlazos,
+			//'periodicidadDePagoEnDias' => $periodicidadDePagoEnDias,
+			//'numeroDeAbonosTotales' => $numeroDeAbonosTotales,
+			//'totalPagadoEnAbonos' => $cobro->totalPagadoEnAbonos,
+
+			//'abonosPagados' => $abonosPagados,
+			//'pagosALaFecha' => $pagosALaFecha,
+			//'ultimoAbono' => $ultimoAbono,
+
+		}
+
+		// ordenar por campo orden
+		$campoOrden  = array_column($arrCobros, 'orden');
+		array_multisort($campoOrden, SORT_ASC, $arrCobros);
+
+
+
+		return response($arrCobros, 200);
+	}
+
+
+	public function traerFoto(Request $request)
+	{
+		$sql = "select ID_IMAGEN, ID_CLIENTE,ID_TIPO_IMAGEN,NOMBRE_IMAGEN,NOMBRE_ARCHIVO_IMAGEN,IMAGEN from core_imagen where ID_TIPO_IMAGEN =2 and ID_CLIENTE = 23117";
+		$resultados = DB::connection('remoto')->select($sql);
+		$fotos = ''; // 12
+		foreach ($resultados as $resultado){
+			$imagen = $resultado->IMAGEN;
+			$nombreImagen = $resultado->NOMBRE_ARCHIVO_IMAGEN;
+			$cachos = explode(".",$nombreImagen);
+			$cuantos = count($cachos);
+			$ultimo = $cuantos-1;
+			$extension = $cachos[$ultimo];
+			$nombreArchivoImagen = $this->normalizarNombre($nombreImagen);
+			$ruta = 'public/tmp/'.$nombreArchivoImagen;
+			Storage::put($ruta, $imagen);
+		}
+	}
+
+	public function traerOrden(Request $request)
+	{
+		// update el orden del registro
+//		$idCuenta = $request->idCuenta;
+//		$sqlLocal = "select count(*) as cuantos from orden where idCuenta=$idCuenta";
+//		$resultado = DB::connection('mysql')->select($sqlLocal);
+//		$cuantos = $resultado[0]->cuantos;
+//		$nuevoOrden = $request->pagos[$x]['orden'];
+//		if($cuantos > 0){
+//			$sqlLocal2 = "update orden set orden = $nuevoOrden where idCuenta=$idCuenta";
+//			DB::connection('mysql')->update($sqlLocal2);
+//		}else{
+//			$sqlLocal2 = "insert into orden set idCuenta=$idCuenta, orden=".$request->pagos[$x]['orden'];
+//			DB::connection('mysql')->insert($sqlLocal2);
+//		}
+	}
+
+	private function normalizarNombre ($nombre) {
+		$tabla = array('Á'=>'A','É'=>'E','Í'=>'I','Ó'=>'O','Ú'=>'U','á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','Ñ'=>'N','ñ'=>'n','&'=>'_',' '=>'_');
+		return strtr($nombre, $tabla);
+	}
+
+	public function buscarCobros(Request $request)
+	{
+		$nombre = $request->nombre;
+		$cuenta = $request->cuenta;
+		$direccionFiltro = $request->direccion;
+		//$arrCobros = array();
+		$textoWhere = '';
+		if(!empty($nombre)){
+			$textoWhere = "(core_persona.NOMBRE like '%".$nombre."%' ||  core_persona.AP_MATERNO  like '%".$nombre."%' || core_persona.AP_MATERNO   like '%".$nombre."%')";
+		}
+		if(!empty($cuenta)){
+			if(!empty($textoWhere)) $textoWhere.=" && ";
+			$textoWhere.="core_cuenta.CLAVE_CUENTA like '%".$cuenta."%'";
+		}
+		if(!empty($textoWhere)){
+			$textoWhere = " where ".$textoWhere;
+			$sql = "select core_persona.ID_PERSONA as idPersona,
+				concat(core_persona.NOMBRE,' ',core_persona.AP_MATERNO,' ',core_persona.AP_MATERNO) as nombreCliente,
+				core_contrato.ID_CLIENTE as idCliente,
+				core_cuenta.ID_CUENTA as idCuenta,
+				core_cuenta.CLAVE_CUENTA as claveCuenta,
+				date_format(core_cuenta.FECHA_VENTA,'%d-%m-%Y') as fechaVenta,
+				core_cuenta.ID_TIPO_PAGO as idTipoPago,
+				core_cuenta.DIA_PAGO as diaPago,
+				core_cuenta.DIA_PAGO_A as diaPagoA,
+				core_cuenta.DIA_PAGO_B as diaPagoB,
+				core_cuenta.FECHA_PROXIMO_PAGO as fechaProximoPago,
+				core_cuenta.MONTO_TOTAL as montoTotal,
+				core_cuenta.ENGANCHE as enganche,
+				core_cuenta.ABONO_ACORDADO as montoAbonoAcordado,
+				core_cuenta.FECHA_PRIMER_PAGO as fechaPrimerPago,
+				core_cliente_aval.ID_COBRADOR as idCobrador,
+				core_cliente_aval.ID_CONTRATO as idContrato,
+				1 as incluir
+				from core_persona
+				left join core_contrato on core_persona.ID_PERSONA =core_contrato.ID_CLIENTE
+				left join core_cuenta on core_cuenta.ID_CONTRATO=core_contrato.ID_CONTRATO
+				left join core_cliente_aval on core_cliente_aval.ID_CONTRATO=core_contrato.ID_CONTRATO
+				$textoWhere";
+			$cobros = DB::connection('remoto')->select($sql);
+			foreach ($cobros as $cobro){
+				// direccion
+//				$fotoFachada = '';
+				$sql4="select core_direccion.ID_DIRECCION,
+					core_direccion.CALLE,
+					core_direccion.NUMERO_EXTERIOR,
+					core_direccion.NUMERO_INTERIOR,
+					core_direccion.COLONIA,
+					core_direccion.DELEGACION,
+					core_direccion.MUNICIPIO,
+					core_direccion.REFERENCIA_CALLES,
+					core_direccion.CODIGO_POSTAL from core_direccion where ID_SUJETO = ".$cobro->idCliente;
+				$direcciones = DB::connection('remoto')->select($sql4);
+				foreach ($direcciones as $direccion) {
+					if(!empty($direccionFiltro)){
+						if(str_contains(strtoupper($direccion->CALLE),strtoupper($direccionFiltro)) ||
+							str_contains(strtoupper($direccion->NUMERO_EXTERIOR),strtoupper($direccionFiltro)) ||
+							str_contains(strtoupper($direccion->NUMERO_INTERIOR),strtoupper($direccionFiltro)) ||
+							str_contains(strtoupper($direccion->COLONIA),strtoupper($direccionFiltro)) ||
+							str_contains(strtoupper($direccion->DELEGACION),strtoupper($direccionFiltro)) ||
+							str_contains(strtoupper($direccion->MUNICIPIO),strtoupper($direccionFiltro)) ||
+							str_contains(strtoupper($direccion->REFERENCIA_CALLES),strtoupper($direccionFiltro)) ||
+							str_contains(strtoupper($direccion->CODIGO_POSTAL),strtoupper($direccionFiltro))){
+							$idDireccion = $direccion->ID_DIRECCION;
+							$calle = ($direccion->CALLE == null) ? ' ' : $direccion->CALLE;
+							$no_ext = ($direccion->NUMERO_EXTERIOR == null) ? ' ' : $direccion->NUMERO_EXTERIOR;
+							$no_int = ($direccion->NUMERO_INTERIOR == null) ? ' ' : $direccion->NUMERO_INTERIOR;
+							$colonia = ($direccion->COLONIA == null) ? ' ' : $direccion->COLONIA;
+							$delegacion = ($direccion->DELEGACION == null) ? '6RXG+WP' : $direccion->DELEGACION.' 6RXG+WP';
+							$municipio = ($direccion->MUNICIPIO == null) ? ' ' : $direccion->MUNICIPIO;
+							$referencias = ($direccion->REFERENCIA_CALLES == null) ? ' ' : $direccion->REFERENCIA_CALLES;
+							$cp = ($direccion->CODIGO_POSTAL == null) ? ' ' : $direccion->CODIGO_POSTAL;
+//							$fotoFachada = $this->traerFoto(1,$cobro->idCliente);
+//							$fotoIne = $this->traerFoto(2,$cobro->idCliente);
+						}
+
+					}else{
+						$idDireccion = $direccion->ID_DIRECCION;
+						$calle = ($direccion->CALLE == null) ? ' ' : $direccion->CALLE;
+						$no_ext = ($direccion->NUMERO_EXTERIOR == null) ? ' ' : $direccion->NUMERO_EXTERIOR;
+						$no_int = ($direccion->NUMERO_INTERIOR == null) ? ' ' : $direccion->NUMERO_INTERIOR;
+						$colonia = ($direccion->COLONIA == null) ? ' ' : $direccion->COLONIA;
+						$delegacion = ($direccion->DELEGACION == null) ? '6RXG+WP' : $direccion->DELEGACION.' 6RXG+WP';
+						$municipio = ($direccion->MUNICIPIO == null) ? ' ' : $direccion->MUNICIPIO;
+						$referencias = ($direccion->REFERENCIA_CALLES == null) ? ' ' : $direccion->REFERENCIA_CALLES;
+						$cp = ($direccion->CODIGO_POSTAL == null) ? ' ' : $direccion->CODIGO_POSTAL;
+//						$fotoFachada = $this->traerFoto(1,$cobro->idCliente);
+//						$fotoIne = $this->traerFoto(2,$cobro->idCliente);
+					}
+				}
+				if(!isset($idDireccion) ){
+					$cobro->incluir = 0;
+				}
+			}
+			// continuar solo con los que cumplen la condicion
+
+			foreach ($cobros as $cobro){
+				if($cobro->incluir ==1) {
+					// traer saldo
+					$sql = "select sum(core_saldo.MONTO_ABONO) as totalPagadoEnAbonos from core_saldo where core_saldo.ID_CUENTA =" . $cobro->idCuenta;
+					$saldoTmp = DB::connection('remoto')->select($sql);
+					foreach ($saldoTmp as $item) {
+						$cobro->totalPagadoEnAbonos = $item->totalPagadoEnAbonos;
+					}
+					// evitar nulos en campos
+					$cobro->diaPago = ($cobro->diaPago == null) ? ' ' : $cobro->diaPago;
+					switch ($cobro->idTipoPago) {
+						case '30': //semanal
+							$periodicidadDePagoEnDias = 7;
+							break;
+						case '31': // quincenal
+							$periodicidadDePagoEnDias = 14;
+							break;
+						case '32': //mensual
+							$periodicidadDePagoEnDias = 30.4;
+							break;
+					}
+					// calcular fecha de liquidacion
+					$montoAPlazos = $cobro->montoTotal - $cobro->enganche;
+					$numeroDeAbonosTotales = ceil($montoAPlazos / $cobro->montoAbonoAcordado);
+					$abonosPagados = floor($cobro->totalPagadoEnAbonos / $cobro->montoAbonoAcordado);
+					$fechaInicial = new DateTime($cobro->fechaPrimerPago);
+					$fechaPrimerPagoH = $fechaInicial->format('d-m-Y'); // 5
+					$fechaHoy = new DateTime('NOW');
+					$diferenciaPrimerPagoYHoy = $fechaInicial->diff($fechaHoy);
+					$diasTranscurridos = $diferenciaPrimerPagoYHoy->days;
+					$pagosALaFecha = (floor($diasTranscurridos / $periodicidadDePagoEnDias) > ($numeroDeAbonosTotales)) ? $numeroDeAbonosTotales : floor($diasTranscurridos / $periodicidadDePagoEnDias);
+					$pagosAtrasados = $pagosALaFecha - $abonosPagados; //8
+					$saldoAtrasado = $pagosAtrasados * $cobro->montoAbonoAcordado; // 9
+					$porcentajePagadoTmp = ($cobro->totalPagadoEnAbonos / $montoAPlazos) * 100; // 7
+					$porcentajePagado = number_format((float)$porcentajePagadoTmp, 2, '.', ',');
+					$cantidadDeDiasDelPlazo = ceil($numeroDeAbonosTotales * $periodicidadDePagoEnDias);
+					$codigoParaDate = "P" . $cantidadDeDiasDelPlazo . "D";
+					$fechaTerminacionCredito = $fechaInicial;
+					$fechaTerminacionCredito->add(new DateInterval($codigoParaDate));
+					$fechaTerminacionCreditoH = $fechaTerminacionCredito->format('d-m-Y'); // 6
+					$fechaProximoPagoInt = new DateTime($cobro->fechaProximoPago);
+					$fechaProximoPagoH = $fechaProximoPagoInt->format('d-m-Y');
+					//calcular saldo
+					$saldo = $cobro->montoTotal - $cobro->totalPagadoEnAbonos - $cobro->enganche;
+					$pagoMinimo = $cobro->montoAbonoAcordado; // 10
+					// lista de pagos
+					$stringPagos = '';
+					$sql1 = "select ID_CUENTA as idCuenta, NUMERO_PAGO as numeroPago, date_format(fecha_pago,'%d-%m-%Y') as fechaPago, RECIBO_TIENDA as reciboTienda, MONTO_ABONO as montoAbono, MONTO_SALDO as montoSaldo from core_saldo where ID_CUENTA = " . $cobro->idCuenta . " order by NUMERO_PAGO";
+					$resultados = DB::connection('remoto')->select($sql1);
+					foreach ($resultados as $resultado) {
+						if (!empty($stringPagos)) $stringPagos .= 'y';
+						$stringPagos .= $resultado->numeroPago . " " . $resultado->fechaPago . " " . $resultado->reciboTienda . " " . $resultado->montoAbono . " " . $resultado->montoSaldo;
+					}
+					//$arrAbonos = DB::connection('remoto')->select($sql1); // 13
+					$sql2 = "select max(NUMERO_PAGO) as ultimoAbono from core_saldo where ID_CUENTA = " . $cobro->idCuenta;
+					$resultados = DB::connection('remoto')->select($sql2);
+					foreach ($resultados as $resultado) {
+						$ultimoAbono = $resultado->ultimoAbono;
+					}
+					// productos
+					$sql3 = "select sc.DESCRIPCION_CAT_INFORMACION as productos from core_mercancia
+				left join sec_cat_catalogo_informacion sc on sc.ID_SEC_CAT_INFORMACION = core_mercancia.ID_MERCANCIA
+				where core_mercancia.ID_CUENTA = " . $cobro->idCuenta;
+					$resultados = DB::connection('remoto')->select($sql3);
+					$productos = ''; // 12
+					foreach ($resultados as $resultado) {
+						if (!empty($productos)) $productos .= ", ";
+						$productos .= $resultado->productos;
+					}
+					// pronto pago
+					$stringProntoPago = '';
+					$sql4 = "select ID_CUENTA as idCuenta, PLAZO as plazo,PRECIO as precio, DATE_FORMAT(FECHA, '%d-%m-%Y') as fecha from core_credicontado where ID_CUENTA = " . $cobro->idCuenta . " order by plazo";
+					$arrProntoPago = array(); // 14 - 15
+					$resultados = DB::connection('remoto')->select($sql4);
+					foreach ($resultados as $resultado) {
+						$arrProntoPago[] = array('idCuenta' => $resultado->idCuenta, 'plazo' => $resultado->plazo, 'precio' => $resultado->precio, 'fecha' => $resultado->fecha);
+						if (!empty($stringProntoPago)) $stringProntoPago .= 'y';
+						$stringProntoPago .= $resultado->fecha . " " . $resultado->precio;
+					}
+					// montos totales
+					$montoTotal = floatval($cobro->montoTotal);
+					$montoAbonoAcordado = floatval($cobro->montoAbonoAcordado);
+					// traer el orden
+
+
+					$arrCobros[] = array('idCobrador' => $cobro->idCobrador, 'idContrato' => $cobro->idContrato, 'idCliente' => $cobro->idCliente, 'idCuenta' => $cobro->idCuenta, 'fechaVenta' => $cobro->fechaVenta, 'claveCuenta' => $cobro->claveCuenta, 'idTipoPago' => $cobro->idTipoPago, 'diaPago' => $cobro->diaPago, 'diaPagoA' => $cobro->diaPagoA, 'diaPagoB' => $cobro->diaPagoB, 'fechaProximoPago' => $fechaProximoPagoH, 'idPersona' => $cobro->idPersona, 'nombreCliente' => $cobro->nombreCliente, 'idDireccion' => $idDireccion, 'calle' => $calle, 'no_ext' => $no_ext, 'no_int' => $no_int, 'colonia' => $colonia, 'delegacion' => $delegacion, 'municipio' => $municipio, 'referencias' => $referencias, 'cp' => $cp, 'orden' => 1, 'cobrado' => 0, 'subido' => 0, 'recibo' => 0, 'fotoIdentificacion' => "", 'fotoFachada' => "", 'montoCobradoEnVisita' => 0.00, 'fechaSiguientePago' => '', 'nota' => '', 'visitado' => 0, 'montoTotal' => $montoTotal, 'montoAbonoAcordado' => $montoAbonoAcordado, 'fechaPrimerPago' => $fechaPrimerPagoH, 'fechaTerminacionCredito' => $fechaTerminacionCreditoH, 'saldo' => $saldo, 'porcentajePagado' => $porcentajePagado, 'pagosAtrasados' => $pagosAtrasados, 'saldoAtrasado' => $saldoAtrasado, 'productos' => $productos, 'prontoPago' => $stringProntoPago, 'relacionPagos' => $stringPagos);
+				}
+			}
+			return response($arrCobros, 200);
+
+		}else{
+			// si solo se mando la direccion
+		}
+	}
+
+	private function sumaComision($pagos)
+	{
+		$monto = 0;
+		$comision = 0;
+		foreach ($pagos as $pago){
+			$monto+=$pago->montoCobradoEnVisita;
+		}
+		$comision = $monto*.08;
+		return ['monto'=>$monto,'comision'=>$comision];
 	}
 }
