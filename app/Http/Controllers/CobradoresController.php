@@ -20,6 +20,7 @@ class CobradoresController extends Controller
 	 */
 	public function index()
 	{
+
 		$this->inicializarDatos();
 		$menuIdCobradores = session()->get('menuIdCobradores');
 		$cobradores = Cobradores::all();
