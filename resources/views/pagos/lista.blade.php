@@ -10,7 +10,6 @@
     <br>
     <div class="content">
         <div class="container-fluid">
-
             {{--primera seccion filtro--}}
             <div class="row">
                 <div class="col-lg-12">
@@ -98,8 +97,6 @@
                     <div class="card">
                         <div class="card-body p-0 table-responsive p-0">
                             <form method="post" action="{{ route('pago.submitLista') }}">
-
-
                                 @if(isset($errores) )
                                     <div class="row">
                                         <div class="col-3">&nbsp;</div>
@@ -126,7 +123,7 @@
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <h5 class="text-sm-left">
-                                                            Desea usted incluirlos en este archivo?.
+                                                            ¿Desea incluirlos en este archivo?
                                                         </h5>
                                                     </div>
                                                 </div>

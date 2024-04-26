@@ -14,6 +14,7 @@
 <!-- /.content-header -->
 
 <!-- Main content -->
+<br>
 <div class="content">
 	<div class="container-fluid">
 		<div class="row">
@@ -32,12 +33,68 @@
 						<!-- /.card-header -->
 
 						<div class="card-body p-3">
+
+							@if($errors->any())
+
+								{{ implode('', $errors->all('<div>:message</div>')) }}
+							@endif
+{{--							@if(isset($errors) )--}}
+{{--								<div class="row">--}}
+{{--									<div class="col-3">&nbsp;</div>--}}
+{{--									<div class="col-6">--}}
+{{--										<div class="alert alert-warning alert-dismissible fade show" role="alert">--}}
+{{--											<button type="button" class="close" data-dismiss="alert" aria-label="Close">--}}
+{{--												<span aria-hidden="true">&times;</span>--}}
+{{--											</button>--}}
+{{--											<div class="row">--}}
+{{--												<div class="col-12">--}}
+{{--													<h5 class="text-sm-left">--}}
+{{--														Los siguientes pagos ya han sido incluidos en anteriores archivos.--}}
+{{--													</h5>--}}
+{{--												</div>--}}
+{{--											</div>--}}
+{{--											@for($x=0;$x<count($errores);$x++)--}}
+{{--												<div class="row">--}}
+{{--													<div class="col-2">&nbsp;</div>--}}
+{{--													<div class="col-10">--}}
+{{--														{{$errores[$x]}}--}}
+{{--													</div>--}}
+{{--												</div>--}}
+{{--											@endfor--}}
+{{--											<div class="row">--}}
+{{--												<div class="col-12">--}}
+{{--													<h5 class="text-sm-left">--}}
+{{--														¿Desea incluirlos en este archivo?--}}
+{{--													</h5>--}}
+{{--												</div>--}}
+{{--											</div>--}}
+{{--											<div class="row">--}}
+{{--												<div class="col-6">--}}
+{{--													<button type="button" class="btn btn-xs btn-danger" data-dismiss="alert" aria-label="Close">--}}
+{{--														<span aria-hidden="true">Cancelar</span>--}}
+{{--													</button>--}}
+{{--												</div>--}}
+{{--												<div class="col-6">--}}
+{{--													<button type="submit"  name="accion" class="btn btn-xs btn-success" value="excelValidado" >--}}
+{{--														Generar excel--}}
+{{--													</button>--}}
+{{--												</div>--}}
+{{--											</div>--}}
+{{--										</div>--}}
+{{--									</div>--}}
+{{--									<div class="col-3">&nbsp;</div>--}}
+{{--								</div>--}}
+{{--							@endif--}}
+
 							<div class="row">
 								{{-- nombres--}}
 								<div class="col-4">
 									<div class="form-group ">
 										<label for="exampleInputBorder">Nombres:</label>
 										<input type="text" class="form-control form-control-sm " name="nombres" >
+										@if ($errors->has('nombres'))
+											<span class="text-danger">{{ $errors->first('nombres') }}</span>
+										@endif
 									</div>
 								</div>
 

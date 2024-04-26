@@ -180,15 +180,51 @@ class CobradoresController extends Controller
 		return view('cobradores.lista')->with(['cobradores' => $cobradores]);
 	}
 
+	public function messages()
+{
+	return [
+		'nombres.required' => 'El nombre es requerido',
+		'paterno.required' => 'El apellido paterno es requerido',
+		'email.required' => 'El correo es requerido',
+		'email.unique' => 'El correo indicado ya existe en los registros de usuario',
+		'idPersona.required' => 'El id del cobrador en el sistema San Juan es requerido',
+		'usuario.required' => 'El usuario es requerido',
+		'password.required' => 'El la clave es requerida',
+	];
+}
+
 	private function agregarCobrador(Request $request)
 	{
+//		$messages = [
+//			'nombres.required' => 'El nombre no puede estar vacio.',
+//			'paterno.required' => 'El apellido paterno no puede estar vacio.',
+//			'email.email' => 'El correo no puede estar vacio.',
+//			'email.unique' => 'El correo indicado ya esta en uso.',
+//			'idPersona.required' => 'El id del vendedor en el sistema San Juan es necesario.',
+//			'usuario.required' => 'El usuario no puede estar vacio.',
+//			'password.required' => 'La clave no puede estar vacia.',
+//
+//		];
 		$fields = $request->validate([
 			'nombres' => 'required|string',
 			'paterno' => 'required|string',
+			'email' => 'required|string|unique:users,email',
 			'idPersona' => 'required|int',
 			'usuario' => 'required|string',
 			'password' => 'required|string',
-		]);
+		],
+		[
+			'nombres.required' => 'El nombre esta vacio.',
+			'paterno.required' => 'El apellido paterno esta vacio.',
+			'email.required' => 'El correo esta vacio.',
+			'email.unique' => 'El correo ya se uso.',
+			'idPersona.required' => 'El id del vendedor es necesario.',
+			'usuario.required' => 'El usuario esta vacio.',
+			'password.required' => 'La clave esta vacia.',
+		]
+
+
+		);
 		$nombreCompleto = $request->nombres." ".$request->paterno." ".$request->materno;
 
 		$sql = "insert into users set 
@@ -210,7 +246,7 @@ class CobradoresController extends Controller
                  activo = '1'";
 		DB::connection('mysql')->insert($sql);
 
-
+		//return back()->with('success', 'El cobrador se agregó correctamente.');
 
 
 //		$fields = $request->validate([
@@ -274,6 +310,7 @@ class CobradoresController extends Controller
                  where id = ".$request->id;
 		DB::connection('mysql')->update($sql);
 	}
+
 
 
 }

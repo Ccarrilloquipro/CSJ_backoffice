@@ -64,6 +64,9 @@ Route::get('pagos/quitarTodos', [PagosController::class, 'quitarTodos'])->name('
 Route::post('pago/submitLista', [PagosController::class, 'submitLista'])->name('pago.submitLista');
 Route::get('pago/regresarLista', [PagosController::class, 'regresarLista'])->name('pago.regresarLista');
 Route::post('pago/filtrarLista', [PagosController::class, 'filtrarLista'])->name('pago.filtrarLista');
+Route::get('cuentas', [PagosController::class, 'pantallaCuentas'])->name('pago.buscarCuenta');
+Route::post('cuentas/filtrar', [PagosController::class, 'filtrarCuentas'])->name('cuentas.filtrar');
+Route::post('cuentas/actualizarFecha', [PagosController::class, 'actualizarFecha'])->name('cuentas.actualizarFecha');
 
 
 
@@ -71,7 +74,7 @@ Route::get('archivos', [ArchivosExportacionController::class, 'index'])->name('a
 Route::get('archivos/detalle/{id}', [ArchivosExportacionController::class, 'detalle'])->name('archivos.detalle');
 
 // borrar
-//Route::post('pagos/traerCobros', [PagosController::class, 'getCobros'])->name('pagos.traerCobros');
+Route::post('pagos/getCobros', [PagosController::class, 'getCobros'])->name('pagos.getCobros');
 //Route::post('pagos/traerFoto', [PagosController::class, 'traerFoto'])->name('pagos.traerFoto');
 //Route::post('pagos/traerOrden', [PagosController::class, 'traerOrden'])->name('pagos.traerOrden');
 //Route::post('pagos/buscarCobros', [PagosController::class, 'buscarCobros'])->name('pagos.buscarCobros');

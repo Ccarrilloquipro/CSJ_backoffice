@@ -95,6 +95,14 @@
                     </p>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{{ route('pago.buscarCuenta') }}" class="nav-link">
+                    <i class="nav-icon fas fa-rss"></i>
+                    <p>
+                        {{ __('Busqueda de cuentas') }}
+                    </p>
+                </a>
+            </li>
 {{--            <li class="nav-item">--}}
 {{--                <a methods="post" href="{{ route('pagos.trerCobros',[45449]) }}" class="nav-link">--}}
 {{--                    <i class="nav-icon fas fa-users"></i>--}}

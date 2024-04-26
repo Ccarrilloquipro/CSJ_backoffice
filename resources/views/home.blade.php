@@ -43,7 +43,7 @@
 {{--            <div class="row">--}}
 {{--                <div class="col-12">--}}
 {{--                    <form method="post" action="{{ route('pagos.traerCobros') }}">--}}
-{{--                        <input type="hidden" name="idCobrador" value="45449">--}}
+{{--                        <input type="hidden" name="idCobrador" value="54157">--}}
 {{--                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >Cobros</button>--}}
 {{--                        @csrf--}}
 {{--                    </form>--}}
@@ -67,17 +67,23 @@
 {{--                    </form>--}}
 {{--                </div>--}}
 {{--            </div>--}}
-{{--            <div class="row">--}}
-{{--                <div class="col-12">--}}
-{{--                    <form method="post" action="{{ route('pagos.buscarCobros') }}">--}}
-{{--                        <input type="hidden" name="nombre" value="aquino">--}}
-{{--                        <input type="hidden" name="direccion" value="">--}}
-{{--                        <input type="hidden" name="cuenta" value="9635">--}}
-{{--                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >buscar</button>--}}
-{{--                        @csrf--}}
-{{--                    </form>--}}
-{{--                </div>--}}
-{{--            </div>--}}
+
+{{--            boton de busqueda de back--}}
+
+            <div class="row">
+                <div class="col-12">
+                    <form method="post" action="{{ route('pagos.getCobros') }}">
+                        <input type="hidden" name="token" value="123456">
+{{--                        <input type="hidden" name="direccion" value="MANANTIAL">--}}
+{{--                        <input type="hidden" name="cuenta" value="">--}}
+                        <input type="hidden" name="idCobrador" value="54685">
+                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >getCobros</button>
+                        @csrf
+                    </form>
+                </div>
+            </div>
+
+
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->

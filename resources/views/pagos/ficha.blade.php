@@ -85,7 +85,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-6 font-weight-bold">
-                                    Fecha siguiente pago
+                                    Fecha de siguiente pago
                                 </div>
                                 <div class="col-6 font-weight-normal">
                                     {{$pago->fechaSiguientePagoH}}
@@ -194,7 +194,7 @@
                                     </div>--}}
                                     <div class="col-12">
                                         <div class="form-group ">
-                                            <label for="nuevaFecha">Fecha siguiente pago:</label>
+                                            <label for="nuevaFecha">Fecha de siguiente pago:</label>
                                             <input type="text" class="form-control form-control-sm " name="nuevaFecha"  value="{{$pago->fechaSiguientePagoH}}">
                                         </div>
                                     </div>
