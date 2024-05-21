@@ -25,6 +25,9 @@ class PagosController extends Controller
      */
     public function index()
     {
+		if(auth()->user()->activo !=1){
+			return view('inactivo');
+		}
 		$this->inicializarDatos();
 		$arrFiltros = session()->get('arrFiltros');
 		$this->pagosLista();
@@ -639,6 +642,9 @@ class PagosController extends Controller
 
 	public function pantallaCuentas()
 	{
+		if(auth()->user()->activo !=1){
+			return view('inactivo');
+		}
 		if (!session()->has('menuCobradores')) {
 			$sql = "select idPersona as id, concat(nombre,' ',paterno,' ',materno) as nombre from cobradores ";
 			$menuCobradoresTmp = DB::connection('mysql')->select($sql);
@@ -692,6 +698,9 @@ class PagosController extends Controller
 
 	private function buscarCuentas()
 	{
+		if(auth()->user()->activo !=1){
+			return view('inactivo');
+		}
 		$idCobrador = session()->get('idCobradorFiltro');
 		$idCuenta = session()->get('idCuentaFiltro');
 

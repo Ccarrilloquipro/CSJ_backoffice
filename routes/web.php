@@ -30,56 +30,44 @@ Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('ho
 Route::middleware('auth')->group(function () {
     Route::view('about', 'about')->name('about');
 
+	//administradores
     Route::get('users', [UserController::class, 'index'])->name('users.index');
 	Route::get('administrador/nuevo', [UserController::class, 'nuevo'])->name('administrador.nuevo');
 	Route::get('administrador/ficha/{id}', [UserController::class, 'ficha'])->name('administrador.ficha');
-//	Route::post('administrador/validar', [UserController::class, 'validar'])->name('administrador.validar');
+	Route::post('administrador/grabar', [UserController::class, 'grabar'])->name('administrador.grabar');
 
     Route::get('profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
     Route::put('profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 
-	// clientes
+	// cobrador
 	Route::get('cobrador', [CobradoresController::class, 'index'])->name('cobrador.index');
+	Route::get('cobrador/ficha/{id}', [CobradoresController::class, 'ficha'])->name('cobrador.ficha');
+	Route::get('cobrador/nuevo', [CobradoresController::class, 'nuevo'])->name('cobrador.nuevo');
+	Route::post('cobrador/grabar', [CobradoresController::class, 'grabar'])->name('cobrador.grabar');
 
+	// pagos
+	Route::get('pagos', [PagosController::class, 'index'])->name('pagos.index');
+	Route::get('pagos/ficha/{id}', [PagosController::class, 'ficha'])->name('pago.ficha');
+	Route::post('pago/updateProximaFecha', [PagosController::class, 'cambiarProximaFecha'])->name('pago.updateProximaFecha');
+	Route::get('pagos/marcarTodos', [PagosController::class, 'marcarTodos'])->name('pago.marcarTodos');
+	Route::get('pagos/quitarTodos', [PagosController::class, 'quitarTodos'])->name('pago.quitarTodos');
+	Route::post('pago/submitLista', [PagosController::class, 'submitLista'])->name('pago.submitLista');
+	Route::get('pago/regresarLista', [PagosController::class, 'regresarLista'])->name('pago.regresarLista');
+	Route::post('pago/filtrarLista', [PagosController::class, 'filtrarLista'])->name('pago.filtrarLista');
+	Route::get('cuentas', [PagosController::class, 'pantallaCuentas'])->name('pago.buscarCuenta');
+	Route::post('cuentas/filtrar', [PagosController::class, 'filtrarCuentas'])->name('cuentas.filtrar');
+	Route::post('cuentas/actualizarFecha', [PagosController::class, 'actualizarFecha'])->name('cuentas.actualizarFecha');
 
+	// archivos
+	Route::get('archivos', [ArchivosExportacionController::class, 'index'])->name('archivos.index');
+	Route::get('archivos/detalle/{id}', [ArchivosExportacionController::class, 'detalle'])->name('archivos.detalle');
+	Route::get('archivos/exportar/{nombreArchivo}', [ArchivosExportacionController::class, 'exportar'])->name('archivos.exportar');
 
+	// borrar
+	//Route::post('pagos/getCobros', [PagosController::class, 'getCobros'])->name('pagos.getCobros');
+	//Route::post('pagos/traerFoto', [PagosController::class, 'traerFoto'])->name('pagos.traerFoto');
+	//Route::post('pagos/traerOrden', [PagosController::class, 'traerOrden'])->name('pagos.traerOrden');
+	//Route::post('pagos/buscarCobros', [PagosController::class, 'buscarCobros'])->name('pagos.buscarCobros');
 });
-Route::post('administrador/grabar', [UserController::class, 'grabar'])->name('administrador.grabar');
-
-//cobrador vigentes
-Route::get('cobrador/ficha/{id}', [CobradoresController::class, 'ficha'])->name('cobrador.ficha');
-Route::get('cobrador/nuevo', [CobradoresController::class, 'nuevo'])->name('cobrador.nuevo');
-Route::post('cobrador/grabar', [CobradoresController::class, 'grabar'])->name('cobrador.grabar');
-
-//cobrador por definir vigencia
-
-
-
-Route::get('pagos', [PagosController::class, 'index'])->name('pagos.index');
-Route::get('pagos/ficha/{id}', [PagosController::class, 'ficha'])->name('pago.ficha');
-//Route::post('pagos/ficha/{id}', [PagosController::class, 'ficha'])->name('pago.ficha');
-Route::post('pago/updateProximaFecha', [PagosController::class, 'cambiarProximaFecha'])->name('pago.updateProximaFecha');
-Route::get('pagos/marcarTodos', [PagosController::class, 'marcarTodos'])->name('pago.marcarTodos');
-Route::get('pagos/quitarTodos', [PagosController::class, 'quitarTodos'])->name('pago.quitarTodos');
-Route::post('pago/submitLista', [PagosController::class, 'submitLista'])->name('pago.submitLista');
-Route::get('pago/regresarLista', [PagosController::class, 'regresarLista'])->name('pago.regresarLista');
-Route::post('pago/filtrarLista', [PagosController::class, 'filtrarLista'])->name('pago.filtrarLista');
-Route::get('cuentas', [PagosController::class, 'pantallaCuentas'])->name('pago.buscarCuenta');
-Route::post('cuentas/filtrar', [PagosController::class, 'filtrarCuentas'])->name('cuentas.filtrar');
-Route::post('cuentas/actualizarFecha', [PagosController::class, 'actualizarFecha'])->name('cuentas.actualizarFecha');
-
-
-
-Route::get('archivos', [ArchivosExportacionController::class, 'index'])->name('archivos.index');
-Route::get('archivos/detalle/{id}', [ArchivosExportacionController::class, 'detalle'])->name('archivos.detalle');
-
-// borrar
-Route::post('pagos/getCobros', [PagosController::class, 'getCobros'])->name('pagos.getCobros');
-//Route::post('pagos/traerFoto', [PagosController::class, 'traerFoto'])->name('pagos.traerFoto');
-//Route::post('pagos/traerOrden', [PagosController::class, 'traerOrden'])->name('pagos.traerOrden');
-//Route::post('pagos/buscarCobros', [PagosController::class, 'buscarCobros'])->name('pagos.buscarCobros');
-
-Route::get('archivos/exportar/{nombreArchivo}', [ArchivosExportacionController::class, 'exportar'])->name('archivos.exportar');
-
 
 

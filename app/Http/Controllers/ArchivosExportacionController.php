@@ -15,7 +15,9 @@ class ArchivosExportacionController extends Controller
      */
     public function index()
     {
-//		$archivos = ArchivosExportacion::all();
+		if(auth()->user()->activo !=1){
+			return view('inactivo');
+		}
 		$sql = "select archivosExportacion.*,users.name as generador
 		from archivosExportacion
 		left join users on archivosExportacion.idGenerador= users.id";

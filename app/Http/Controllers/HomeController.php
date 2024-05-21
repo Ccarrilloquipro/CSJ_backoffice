@@ -24,21 +24,24 @@ class HomeController extends Controller
      */
     public function index()
     {
-		$sql = "select count(pagos.id) as cuantos, 0 as monto,pagos.idCobrador,
-			concat(cobradores.nombre,' ',cobradores.paterno,' ',cobradores.materno) as cobrador
-			from pagos
-			left join cobradores on cobradores.idPersona=pagos.idCobrador
-			where  pagos.enExcel = 0
-			group by pagos.idCobrador,cobrador";
-		$arrCobradores = DB::connection('mysql')->select($sql);
-
-		$sql = "select sum(montoCobradoEnVisita) as importe,idCobrador from pagos where  pagos.enExcel = 0 group by idCobrador";
-		$montos = DB::connection('mysql')->select($sql);
-		foreach ($arrCobradores as $cobrador){
-			foreach ($montos as $monto){
-				if($cobrador->idCobrador == $monto->idCobrador) $cobrador->monto = $monto->importe;
-			}
+		if(auth()->user()->activo !=1){
+			return view('inactivo');
 		}
-		return view('home', compact('arrCobradores'));
-    }
+		$sql = "select count(pagos.id) as cuantos, 0 as monto,pagos.idCobrador,
+		concat(cobradores.nombre,' ',cobradores.paterno,' ',cobradores.materno) as cobrador
+		from pagos
+		left join cobradores on cobradores.idPersona=pagos.idCobrador
+		where  pagos.enExcel = 0
+		group by pagos.idCobrador,cobrador";
+			$arrCobradores = DB::connection('mysql')->select($sql);
+
+			$sql = "select sum(montoCobradoEnVisita) as importe,idCobrador from pagos where  pagos.enExcel = 0 group by idCobrador";
+			$montos = DB::connection('mysql')->select($sql);
+			foreach ($arrCobradores as $cobrador){
+				foreach ($montos as $monto){
+					if($cobrador->idCobrador == $monto->idCobrador) $cobrador->monto = $monto->importe;
+				}
+			}
+			return view('home', compact('arrCobradores'));
+		}
 }

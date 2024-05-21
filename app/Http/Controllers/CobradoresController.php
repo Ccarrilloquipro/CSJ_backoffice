@@ -20,7 +20,9 @@ class CobradoresController extends Controller
 	 */
 	public function index()
 	{
-
+		if(auth()->user()->activo !=1){
+			return view('inactivo');
+		}
 		$this->inicializarDatos();
 		$menuIdCobradores = session()->get('menuIdCobradores');
 		$cobradores = Cobradores::all();
@@ -154,8 +156,19 @@ class CobradoresController extends Controller
 	public function nuevo()
 	{
 		$menuIdCobradores = session()->get('menuIdCobradores');
-		$cobrador = new Cobradores;
-		return view('cobradores.ficha')->with(['cobrador' => $cobrador,'menuIdCobradores'=>$menuIdCobradores]);
+		//$cobrador = new Cobradores;
+		$formularioCobrador = array(
+			'id'=>'nuevo',
+			'nombre'=>'',
+			'paterno'=>'',
+			'materno'=>'',
+			'email'=>'',
+			'idPersona'=>'',
+			'usuario'=>'',
+			'clave'=>'',
+		);
+		session()->put('formularioCobrador',$formularioCobrador);
+		return view('cobradores.alta')->with(['menuIdCobradores'=>$menuIdCobradores]);
 	}
 
 	public function ficha($id){
@@ -171,7 +184,7 @@ class CobradoresController extends Controller
 	public function grabar(Request $request)
 	{
 		$id = $request->id;
-		if ($id == null){
+		if ($id == 'nuevo'){
 			$this->agregarCobrador($request);
 		}else{
 			$this->editarCobrador($request);
@@ -181,36 +194,36 @@ class CobradoresController extends Controller
 	}
 
 	public function messages()
-{
-	return [
-		'nombres.required' => 'El nombre es requerido',
-		'paterno.required' => 'El apellido paterno es requerido',
-		'email.required' => 'El correo es requerido',
-		'email.unique' => 'El correo indicado ya existe en los registros de usuario',
-		'idPersona.required' => 'El id del cobrador en el sistema San Juan es requerido',
-		'usuario.required' => 'El usuario es requerido',
-		'password.required' => 'El la clave es requerida',
-	];
-}
+	{
+		return [
+			'nombres.required' => 'El nombre es requerido',
+			'paterno.required' => 'El apellido paterno es requerido',
+			'email.required' => 'El correo es requerido',
+			'email.unique' => 'El correo indicado ya existe en los registros de usuario',
+			'idPersona.required' => 'El id del cobrador en el sistema San Juan es requerido',
+			'usuario.required' => 'El usuario es requerido',
+			'password.required' => 'El la clave es requerida',
+		];
+	}
 
 	private function agregarCobrador(Request $request)
 	{
-//		$messages = [
-//			'nombres.required' => 'El nombre no puede estar vacio.',
-//			'paterno.required' => 'El apellido paterno no puede estar vacio.',
-//			'email.email' => 'El correo no puede estar vacio.',
-//			'email.unique' => 'El correo indicado ya esta en uso.',
-//			'idPersona.required' => 'El id del vendedor en el sistema San Juan es necesario.',
-//			'usuario.required' => 'El usuario no puede estar vacio.',
-//			'password.required' => 'La clave no puede estar vacia.',
-//
-//		];
+		$formularioCobrador = session()->get('formularioCobrador');
+		$formularioCobrador['nombre'] = $request->nombres;
+		$formularioCobrador['paterno'] = $request->paterno;
+		$formularioCobrador['materno'] = $request->materno;
+		$formularioCobrador['email'] = $request->email;
+		$formularioCobrador['idPersona'] = $request->idPersona;
+		$formularioCobrador['usuario'] = $request->usuario;
+		$formularioCobrador['clave'] = $request->password;
+		session()->put('formularioCobrador',$formularioCobrador);
+		$cobrador = session()->get('formularioCobrador');
 		$fields = $request->validate([
 			'nombres' => 'required|string',
 			'paterno' => 'required|string',
-			'email' => 'required|string|unique:users,email',
+			'email' => 'required|email|unique:users,email',
 			'idPersona' => 'required|int',
-			'usuario' => 'required|string',
+			'usuario' => 'required|string|unique:users,usuario',
 			'password' => 'required|string',
 		],
 		[
@@ -218,8 +231,10 @@ class CobradoresController extends Controller
 			'paterno.required' => 'El apellido paterno esta vacio.',
 			'email.required' => 'El correo esta vacio.',
 			'email.unique' => 'El correo ya se uso.',
+			'email.email' => 'El correo no es un correo valido.',
 			'idPersona.required' => 'El id del vendedor es necesario.',
 			'usuario.required' => 'El usuario esta vacio.',
+			'usuario.unique' => 'El nombre de usuario ya se uso.',
 			'password.required' => 'La clave esta vacia.',
 		]
 
@@ -246,38 +261,7 @@ class CobradoresController extends Controller
                  activo = '1'";
 		DB::connection('mysql')->insert($sql);
 
-		//return back()->with('success', 'El cobrador se agregó correctamente.');
-
-
-//		$fields = $request->validate([
-//			'nombres' => 'required|string',
-//			'paterno' => 'required|string',
-//			'idPersona' => 'required|int',
-//			'email' => 'required|string|unique:users,email',
-//			'usuario' => 'required|string|unique:users',
-//			'idTipoUsuario' => 'required|int',
-//			'password' => 'required|string',
-//		]);
-
-//		return Validator::make($request, [
-//			'name' => ['required', 'string', 'max:255'],
-//			'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-//			'password' => ['required', 'string', 'min:8', 'confirmed'],
-//		]);
-//
-//		return User::create([
-//			'name' => $data['name'],
-//			'email' => $data['email'],
-//			'password' => Hash::make($data['password']),
-//		]);
-
-//		$user = User::create([
-//			'name' => $fields['name'],
-//			'email' => $fields['email'],
-//			'usuario' => $fields['usuario'],
-//			'idTipoUsuario' => $fields['idTipoUsuario'],
-//			'password' => bcrypt($fields['password'])
-//		]);
+		return back()->with('success', 'El cobrador se agregó correctamente.');
 	}
 
 	private function editarCobrador(Request $request)
@@ -287,7 +271,15 @@ class CobradoresController extends Controller
 			'paterno' => 'required|string',
 			'idPersona' => 'required|int',
 			'usuario' => 'required|string'
-		]);
+		],
+		[
+			'nombres.required' => 'El nombre esta vacio.',
+			'paterno.required' => 'El apellido paterno esta vacio.',
+			'idPersona.required' => 'El id del vendedor es necesario.',
+			'usuario.required' => 'El usuario esta vacio.',
+			'password.required' => 'La clave esta vacia.',
+		]
+		);
 		$nombreCompleto = $request->nombres." ".$request->paterno." ".$request->materno;
 		$textoPass = (!empty($request->password)) ? "password = '".bcrypt($request['password'])."'," :  "";
 
@@ -309,8 +301,6 @@ class CobradoresController extends Controller
                  activo = '".$request->activo."'
                  where id = ".$request->id;
 		DB::connection('mysql')->update($sql);
+		return back()->with('success', 'El cobrador se actualizó correctamente.');
 	}
-
-
-
 }

@@ -28,6 +28,9 @@
                                         <div class="form-group ">
                                             <label for="exampleInputBorder">Nombre:</label>
                                             <input type="text" class="form-control form-control-sm " name="name" value="{{$administrador->name}}">
+                                            @if ($errors->has('name'))
+                                                <span class="text-danger">{{ $errors->first('name') }}</span>
+                                            @endif
                                         </div>
                                     </div>
                                     {{-- correo--}}
@@ -35,6 +38,9 @@
                                         <div class="form-group ">
                                             <label for="exampleInputBorder">correo:</label>
                                             <input type="text" class="form-control form-control-sm " name="email" value="{{$administrador->email}}">
+                                            @if ($errors->has('email'))
+                                                <span class="text-danger">{{ $errors->first('email') }}</span>
+                                            @endif
                                         </div>
                                     </div>
                                     {{-- ususario--}}
@@ -42,6 +48,9 @@
                                         <div class="form-group ">
                                             <label for="exampleInputBorder">Usuario:</label>
                                             <input type="text" class="form-control form-control-sm " name="usuario"  value="{{$administrador->usuario}}">
+                                            @if ($errors->has('usuario'))
+                                                <span class="text-danger">{{ $errors->first('usuario') }}</span>
+                                            @endif
                                         </div>
                                     </div>
                                     {{-- clave--}}
@@ -50,6 +59,9 @@
                                         <div class="form-group ">
                                             <label for="exampleInputBorder">clave:</label>
                                             <input type="text" class="form-control form-control-sm " name="password" value="">
+                                            @if ($errors->has('password'))
+                                                <span class="text-danger">{{ $errors->first('password') }}</span>
+                                            @endif
                                         </div>
                                     </div>
                                     @php } @endphp

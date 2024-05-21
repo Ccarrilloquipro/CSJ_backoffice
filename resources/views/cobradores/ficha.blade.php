@@ -10,9 +10,36 @@
     <!-- Main content -->
     <br>
     <div class="content">
-{{--            @dd($cobrador)--}}
+{{--            @dd($errors)--}}
         <div class="container-fluid">
+{{--            @if(isset($errors) )--}}
+{{--                <div class="row">--}}
+{{--                    <div class="col-3"></div>--}}
+{{--                    <div class="col-6">--}}
 
+{{--                        <div class="alert alert-warning alert-dismissible fade show" role="alert">--}}
+{{--                            <div class="row">--}}
+{{--                                <div class="col-11">--}}
+{{--                                    Errores:--}}
+{{--                                </div>--}}
+{{--                                <div class="col-1">--}}
+{{--                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">--}}
+{{--                                        <span aria-hidden="true">&times;</span>--}}
+{{--                                    </button>--}}
+{{--                                </div>--}}
+{{--                            </div>--}}
+{{--                            <div class="row">--}}
+{{--                                <div class="col-12">--}}
+{{--                                    <h5 class="text-sm-left">--}}
+{{--                                        {{ $errors }}--}}
+{{--                                    </h5>--}}
+{{--                                </div>--}}
+{{--                            </div>--}}
+{{--                        </div>--}}
+{{--                    </div>--}}
+{{--                    <div class="col-3">&nbsp;</div>--}}
+{{--                </div>--}}
+{{--            @endif--}}
             <div class="row">
                 <div class="col-lg-12">
                     <form method="post" action="{{ route('cobrador.grabar') }}">

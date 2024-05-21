@@ -10,6 +10,9 @@ class UserController extends Controller
 {
     public function index()
     {
+		if(auth()->user()->activo !=1){
+			return view('inactivo');
+		}
 		$sql = "select id, name , email ,usuario,activo from users where idTipoUsuario=1";
 		$administradores = DB::connection('mysql')->select($sql);
         //$administradores = User::where('idTipoUsuario','=',1)->get();
@@ -48,10 +51,19 @@ class UserController extends Controller
 	{
 		$fields = $request->validate([
 			'name' => 'required|string',
-			'email' => 'required|string|unique:users,email',
-			'usuario' => 'required|string',
+			'email' => 'required|email|unique:users,email',
+			'usuario' => 'required|string|unique:users,usuario',
 			'idTipoUsuario' => 'required|int',
-			'password' => 'required|string',
+			'password' => 'required|string'
+		],
+		[
+			'name.required' => 'El nombre esta vacio.',
+			'email.required' => 'El correo esta vacio.',
+			'email.unique' => 'El correo ya se uso.',
+			'email.email' => 'El correo no es un correo valido.',
+			'usuario.required' => 'El usuario esta vacio.',
+			'usuario.unique' => 'El nombre de usuario ya se uso.',
+			'password.required' => 'La clave esta vacia.'
 		]);
 
 		$user = User::create([
@@ -69,6 +81,14 @@ class UserController extends Controller
 			'name' => 'required|string',
 			'email' => 'required|string',
 			'usuario' => 'required|string',
+		],
+		[
+			'name.required' => 'El nombre esta vacio.',
+			'email.required' => 'El correo esta vacio.',
+			'email.unique' => 'El correo ya se uso.',
+			'email.email' => 'El correo no es un correo valido.',
+			'usuario.required' => 'El usuario esta vacio.',
+			'usuario.unique' => 'El nombre de usuario ya se uso.'
 		]);
 
 		$sql = "update users set 
@@ -79,7 +99,4 @@ class UserController extends Controller
                  where id = ".$request->id;
 		DB::connection('mysql')->update($sql);
 	}
-
-
-
 }

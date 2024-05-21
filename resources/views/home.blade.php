@@ -2,15 +2,7 @@
 
 @section('content')
     <!-- Content Header (Page header) -->
-{{--    <div class="content-header">--}}
-{{--        <div class="container-fluid">--}}
-{{--            <div class="row mb-2">--}}
-{{--                <div class="col-sm-6">--}}
-{{--                    <h1 class="m-0">{{ __('jom') }}</h1>--}}
-{{--                </div><!-- /.col -->--}}
-{{--            </div><!-- /.row -->--}}
-{{--        </div><!-- /.container-fluid -->--}}
-{{--    </div>--}}
+
     <!-- /.content-header -->
 
     <!-- Main content -->
@@ -40,50 +32,6 @@
                 @endforeach
             </div>
             <!-- /.row -->
-{{--            <div class="row">--}}
-{{--                <div class="col-12">--}}
-{{--                    <form method="post" action="{{ route('pagos.traerCobros') }}">--}}
-{{--                        <input type="hidden" name="idCobrador" value="54157">--}}
-{{--                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >Cobros</button>--}}
-{{--                        @csrf--}}
-{{--                    </form>--}}
-{{--                </div>--}}
-{{--            </div>--}}
-{{--            <div class="row">--}}
-{{--                <div class="col-12">--}}
-{{--                    <form method="post" action="{{ route('pagos.traerFoto') }}">--}}
-{{--                        <input type="hidden" name="idCliente" value="23117">--}}
-{{--                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >Foto</button>--}}
-{{--                        @csrf--}}
-{{--                    </form>--}}
-{{--                </div>--}}
-{{--            </div>--}}
-{{--            <div class="row">--}}
-{{--                <div class="col-12">--}}
-{{--                    <form method="post" action="{{ route('pagos.traerOrden') }}">--}}
-{{--                        <input type="hidden" name="idCuenta" value="9569">--}}
-{{--                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >orden</button>--}}
-{{--                        @csrf--}}
-{{--                    </form>--}}
-{{--                </div>--}}
-{{--            </div>--}}
-
-{{--            boton de busqueda de back--}}
-
-            <div class="row">
-                <div class="col-12">
-                    <form method="post" action="{{ route('pagos.getCobros') }}">
-                        <input type="hidden" name="token" value="123456">
-{{--                        <input type="hidden" name="direccion" value="MANANTIAL">--}}
-{{--                        <input type="hidden" name="cuenta" value="">--}}
-                        <input type="hidden" name="idCobrador" value="54685">
-                        <button type="submit" name="accion" class="btn btn-xs bg-success" value="" >getCobros</button>
-                        @csrf
-                    </form>
-                </div>
-            </div>
-
-
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content -->
