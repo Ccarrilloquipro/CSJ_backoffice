@@ -64,7 +64,7 @@ Route::middleware('auth')->group(function () {
 	Route::get('archivos/exportar/{nombreArchivo}', [ArchivosExportacionController::class, 'exportar'])->name('archivos.exportar');
 
 	// borrar
-	//Route::post('pagos/getCobros', [PagosController::class, 'getCobros'])->name('pagos.getCobros');
+	Route::post('pagos/getCobros', [PagosController::class, 'getCobros'])->name('pagos.getCobros');
 	//Route::post('pagos/traerFoto', [PagosController::class, 'traerFoto'])->name('pagos.traerFoto');
 	//Route::post('pagos/traerOrden', [PagosController::class, 'traerOrden'])->name('pagos.traerOrden');
 	//Route::post('pagos/buscarCobros', [PagosController::class, 'buscarCobros'])->name('pagos.buscarCobros');

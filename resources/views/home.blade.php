@@ -31,6 +31,21 @@
                 </div>
                 @endforeach
             </div>
+
+{{--<div class="row">--}}
+{{--    <div class="col-12">--}}
+{{--        <form method="post" action="{{ route('pagos.getCobros') }}">--}}
+{{--            <input type="hidden" name="idCobrador" value="54685">--}}
+{{--            <button type="submit" class="btn btn-xs bg-success" value="Update" >Cobros</button>--}}
+{{--            @csrf--}}
+{{--        </form>--}}
+{{--    </div>--}}
+
+{{--</div>--}}
+
+
+
+{{--            <a href="{{ route('pagos.getCobros') }}" class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Cobros</a>--}}
             <!-- /.row -->
         </div><!-- /.container-fluid -->
     </div>

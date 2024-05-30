@@ -1360,8 +1360,7 @@ class PagosController extends Controller
 		return ['monto'=>$monto,'comision'=>$comision];
 	}
 
-
-	public function getCobros(Request $request)
+	public function getCobrosAnt(Request $request)
 	{
 		$hoy = date('Y-m-d');
 		$arrCobros = array();
@@ -1380,6 +1379,7 @@ class PagosController extends Controller
 			core_cuenta.ENGANCHE as enganche,
 			core_cuenta.ABONO_ACORDADO as montoAbonoAcordado,
 			core_cuenta.FECHA_PRIMER_PAGO as fechaPrimerPago,
+			core_cuenta.nota as notaOriginal,
 			sum(core_saldo.MONTO_ABONO) as totalPagadoEnAbonos,
 			core_persona.ID_PERSONA as idPersona,
        		concat(core_persona.NOMBRE,' ',core_persona.AP_PATERNO,' ',core_persona.AP_MATERNO) as nombreCliente 
@@ -1388,16 +1388,25 @@ class PagosController extends Controller
 			left join core_cuenta on core_cuenta.ID_CONTRATO=core_contrato.ID_CONTRATO
 			left join core_persona on core_persona.ID_PERSONA =core_contrato.ID_CLIENTE
 			left join core_saldo on core_saldo.ID_CUENTA=core_cuenta.ID_CUENTA
-			where core_cliente_aval.ID_COBRADOR=".$request->idCobrador." && core_cuenta.FECHA_PROXIMO_PAGO='".$hoy."' && core_cuenta.ACTIVO=1 group by core_cliente_aval.ID_COBRADOR, core_cliente_aval.ID_CONTRATO,core_contrato.ID_CLIENTE,core_cuenta.CLAVE_CUENTA,core_cuenta.FECHA_VENTA,core_cuenta.ID_TIPO_PAGO,core_cuenta.DIA_PAGO,core_cuenta.DIA_PAGO_A,core_cuenta.DIA_PAGO_B,core_cuenta.FECHA_PROXIMO_PAGO, core_cuenta.MONTO_TOTAL, core_cuenta.ENGANCHE,core_cuenta.ABONO_ACORDADO,core_cuenta.FECHA_PRIMER_PAGO,
-			core_persona.ID_PERSONA,core_persona.NOMBRE,core_persona.AP_PATERNO,core_persona.AP_MATERNO,core_cuenta.ID_CUENTA";
+			where core_cliente_aval.ID_COBRADOR=".$request->idCobrador." && core_cuenta.ACTIVO=1 && core_cuenta.FECHA_PROXIMO_PAGO='".$hoy."' group by core_cliente_aval.ID_COBRADOR, core_cliente_aval.ID_CONTRATO,core_contrato.ID_CLIENTE,core_cuenta.CLAVE_CUENTA,core_cuenta.FECHA_VENTA,core_cuenta.ID_TIPO_PAGO,core_cuenta.DIA_PAGO,core_cuenta.DIA_PAGO_A,core_cuenta.DIA_PAGO_B,core_cuenta.FECHA_PROXIMO_PAGO, core_cuenta.MONTO_TOTAL, core_cuenta.ENGANCHE,core_cuenta.ABONO_ACORDADO,core_cuenta.FECHA_PRIMER_PAGO,
+			core_cuenta.nota,core_persona.ID_PERSONA,core_persona.NOMBRE,core_persona.AP_PATERNO,core_persona.AP_MATERNO,core_cuenta.ID_CUENTA";
 
-		// having montoTotal-totalPagadoEnAbonos-enganche>0
 		$cobros = DB::connection('remoto')->select($sql);
+
+
+		// traer el orden
+		$sql5a = "select max(orden) as maximo from orden";
+		$maximoOrdenTmp = DB::connection('mysql')->select($sql5a);
+		if(!empty($maximoOrdenTmp)) {
+			$maximo = $maximoOrdenTmp[0]->maximo + 1;
+		}else{
+			$maximo = 1;
+		}
 
 		foreach ($cobros as $cobro){
 			// evitar nulos en campos
 			$cobro->diaPago = ($cobro->diaPago == null) ? ' ' : $cobro->diaPago;
-
+			$cobro->notaOriginal = ($cobro->notaOriginal == null) ? ' ' : $cobro->notaOriginal;
 			switch($cobro->idTipoPago){
 				case '30': //semanal
 					$periodicidadDePagoEnDias = 7;
@@ -1441,20 +1450,8 @@ class PagosController extends Controller
 
 			//calcular saldo
 			$saldo = $cobro->montoTotal-$cobro->totalPagadoEnAbonos-$cobro->enganche;
-
 			$pagoMinimo = $cobro->montoAbonoAcordado; // 10
-
-			// lista de pagos
-//			$stringPagos='';
-//			$sql1 = "select ID_CUENTA as idCuenta, NUMERO_PAGO as numeroPago, date_format(fecha_pago,'%d-%m-%Y') as fechaPago, RECIBO_TIENDA as reciboTienda, MONTO_ABONO as montoAbono, MONTO_SALDO as montoSaldo from core_saldo where ID_CUENTA = ".$cobro->idCuenta." order by NUMERO_PAGO";
-//			$resultados = DB::connection('remoto')->select($sql1);
-//			foreach ($resultados as $resultado){
-//				if(!empty($stringPagos)) $stringPagos.='y';
-//				$stringPagos.=$resultado->numeroPago." ".$resultado->fechaPago." ".$resultado->reciboTienda." ".$resultado->montoAbono." ".$resultado->montoSaldo;
-//			}
-
-
-			// lista de pagos iva
+			// lista de pagos nva
 			$arrPagos = array();
 			$sql1 = "select ID_CUENTA as idCuenta, NUMERO_PAGO as numeroPago, date_format(fecha_pago,'%d-%m-%Y') as fechaPago, RECIBO_TIENDA as reciboTienda, MONTO_ABONO as montoAbono, MONTO_SALDO as montoSaldo from core_saldo where ID_CUENTA = ".$cobro->idCuenta." order by NUMERO_PAGO";
 			$resultados = DB::connection('remoto')->select($sql1);
@@ -1480,8 +1477,6 @@ class PagosController extends Controller
 				$stringPagos.=$arrPagosInv[$t]['pagoNo']." ".$arrPagosInv[$t]['fecha']." ".$arrPagosInv[$t]['recibo']." ".$arrPagosInv[$t]['monto']." ".$arrPagosInv[$t]['saldo'];
 			}
 
-
-
 			$sql2 = "select max(NUMERO_PAGO) as ultimoAbono from core_saldo where ID_CUENTA = ".$cobro->idCuenta;
 			$resultados = DB::connection('remoto')->select($sql2);
 			foreach ($resultados as $resultado){
@@ -1498,19 +1493,6 @@ class PagosController extends Controller
 				if(!empty($productos)) $productos.=", ";
 				$productos.=$resultado->productos;
 			}
-
-			// pronto pago ant
-//			$stringProntoPago='';
-//			$sql4 = "select ID_CUENTA as idCuenta, PLAZO as plazo,PRECIO as precio, DATE_FORMAT(FECHA, '%d-%m-%Y') as fecha from core_credicontado where ID_CUENTA = ".$cobro->idCuenta. " order by plazo";
-//			$arrProntoPago = array(); // 14 - 15
-//			$resultados = DB::connection('remoto')->select($sql4);
-//			foreach ($resultados as $resultado){
-//				$arrProntoPago[] = array('idCuenta' => $resultado->idCuenta,'plazo' => $resultado->plazo,'precio'=>$resultado->precio,'fecha'=>$resultado->fecha);
-//				if(!empty($stringProntoPago)) $stringProntoPago.='y';
-//				$stringProntoPago.=$resultado->fecha." ".$resultado->precio;
-//			}
-
-
 			// pronto pago
 			$stringProntoPago='';
 			$sql4 = "select ID_CUENTA as idCuenta, PLAZO as plazo,PRECIO as precio, FECHA as fecha, DATE_FORMAT(FECHA, '%d-%m-%Y') as fechaH from core_credicontado where ID_CUENTA = ".$cobro->idCuenta. "  and ACTIVO=1 order by plazo";
@@ -1549,36 +1531,26 @@ class PagosController extends Controller
 				$referencias = ($direccion->REFERENCIA_CALLES == null) ? ' ' : $direccion->REFERENCIA_CALLES;
 				$cp = ($direccion->CODIGO_POSTAL == null) ? ' ' : $direccion->CODIGO_POSTAL;
 			}
-			// todo: aqui se busca la ruta de las imagenes de credencial y de fachada
 			// fotos
 //			$fotoFachada = $this->traerFoto(1,$cobro->idCliente);
 //			$fotoIne = $this->traerFoto(2,$cobro->idCliente);
-
-			$fotoFachada = 'qwerwqr';
-			$fotoIne = 'xcvbxcvbxcvb';
-
+			$fotoFachada = "foto1.jpg";
+			$fotoIne = "foto2.jpg";
 			// montos totales
 			$montoTotal = floatval($cobro->montoTotal);
 			$montoAbonoAcordado = floatval($cobro->montoAbonoAcordado);
 
-			// traer el orden
-			$sql5a = "select max(orden) as maximo from orden";
-			$maximoOrdenTmp = DB::connection('mysql')->select($sql5a);
-			if(!empty($maximoOrdenTmp)) {
-				$maximo = $maximoOrdenTmp[0]->maximo + 1;
-			}else{
-				$maximo = 1;
-			}
 
+			//orden
 			$sql5="select orden from orden where idCuenta=".$cobro->idCuenta;
 			$ordenTmp = DB::connection('mysql')->select($sql5);
 			if(!empty($ordenTmp)){
 				$ordenDeItem = $ordenTmp[0]->orden;
 			}else{
 				$sql6 = "insert into orden set idCuenta = ".$cobro->idCuenta.",orden = $maximo";
-				DB::connection('mysql')->select($sql6);
+				DB::connection('mysql')->insert($sql6);
 				$ordenDeItem = $maximo;
-				//$maximo++;
+				$maximo++;
 			}
 
 			$arrCobros[] = array(
@@ -1612,11 +1584,12 @@ class PagosController extends Controller
 				'fotoFachada' => $fotoFachada,
 				'montoCobradoEnVisita' => 0.00,
 				'fechaSiguientePago' => '',
-				'nota' => '',
 				'visitado' => 0,
 				'montoTotal' => $montoTotal,
 				'montoAbonoAcordado' => $montoAbonoAcordado,
 				'fechaPrimerPago' => $fechaPrimerPagoH,
+				'nota' => '',
+				'notaOriginal' => $cobro->notaOriginal,
 				'fechaTerminacionCredito' => $fechaTerminacionCreditoH,
 				'saldo' => $saldo,
 				'porcentajePagado' => $porcentajePagado,
@@ -1634,4 +1607,260 @@ class PagosController extends Controller
 
 		return response($arrCobros, 200);
 	}
+
+
+
+	public function getCobros(Request $request)
+	{
+		$hoy = date('Y-m-d');
+		$arrCobros = array();
+		$sql = "select core_cliente_aval.ID_COBRADOR as idCobrador,
+			core_cliente_aval.ID_CONTRATO as idContrato,
+			core_contrato.ID_CLIENTE as idCliente,
+			core_cuenta.ID_CUENTA as idCuenta,
+			core_cuenta.CLAVE_CUENTA as claveCuenta,
+			date_format(core_cuenta.FECHA_VENTA,'%d-%m-%Y') as fechaVenta,
+			core_cuenta.ID_TIPO_PAGO as idTipoPago,
+			core_cuenta.DIA_PAGO as diaPago,
+			core_cuenta.DIA_PAGO_A as diaPagoA,
+			core_cuenta.DIA_PAGO_B as diaPagoB,
+			core_cuenta.FECHA_PROXIMO_PAGO as fechaProximoPago, 
+			core_cuenta.MONTO_TOTAL as montoTotal,
+			core_cuenta.ENGANCHE as enganche,
+			core_cuenta.ABONO_ACORDADO as montoAbonoAcordado,
+			core_cuenta.FECHA_PRIMER_PAGO as fechaPrimerPago,
+			core_cuenta.nota as notaOriginal,
+			sum(core_saldo.MONTO_ABONO) as totalPagadoEnAbonos,
+			core_persona.ID_PERSONA as idPersona,
+       		concat(core_persona.NOMBRE,' ',core_persona.AP_PATERNO,' ',core_persona.AP_MATERNO) as nombreCliente 
+			from core_cliente_aval
+			left join core_contrato on core_contrato.ID_CONTRATO=core_cliente_aval.ID_CONTRATO
+			left join core_cuenta on core_cuenta.ID_CONTRATO=core_contrato.ID_CONTRATO
+			left join core_persona on core_persona.ID_PERSONA =core_contrato.ID_CLIENTE
+			left join core_saldo on core_saldo.ID_CUENTA=core_cuenta.ID_CUENTA
+			where core_cliente_aval.ID_COBRADOR=".$request->idCobrador." && core_cuenta.ACTIVO=1 && core_cuenta.FECHA_PROXIMO_PAGO='".$hoy."' group by core_cliente_aval.ID_COBRADOR, core_cliente_aval.ID_CONTRATO,core_contrato.ID_CLIENTE,core_cuenta.CLAVE_CUENTA,core_cuenta.FECHA_VENTA,core_cuenta.ID_TIPO_PAGO,core_cuenta.DIA_PAGO,core_cuenta.DIA_PAGO_A,core_cuenta.DIA_PAGO_B,core_cuenta.FECHA_PROXIMO_PAGO, core_cuenta.MONTO_TOTAL, core_cuenta.ENGANCHE,core_cuenta.ABONO_ACORDADO,core_cuenta.FECHA_PRIMER_PAGO,
+			core_cuenta.nota,core_persona.ID_PERSONA,core_persona.NOMBRE,core_persona.AP_PATERNO,core_persona.AP_MATERNO,core_cuenta.ID_CUENTA";
+//		&& core_cuenta.ACTIVO=1
+		$cobros = DB::connection('remoto')->select($sql);
+
+
+		// traer el orden
+//		$sql5a = "select max(orden) as maximo from orden";
+//		$maximoOrdenTmp = DB::connection('mysql')->select($sql5a);
+//		if(!empty($maximoOrdenTmp)) {
+//			$maximo = $maximoOrdenTmp[0]->maximo + 1;
+//		}else{
+//			$maximo = 1;
+//		}
+
+		foreach ($cobros as $cobro){
+			// evitar nulos en campos
+			$cobro->diaPago = ($cobro->diaPago == null) ? ' ' : $cobro->diaPago;
+			$cobro->notaOriginal = ($cobro->notaOriginal == null) ? ' ' : $cobro->notaOriginal;
+			switch($cobro->idTipoPago){
+				case '30': //semanal
+					$periodicidadDePagoEnDias = 7;
+					break;
+				case '31': // quincenal
+					$periodicidadDePagoEnDias = 14;
+					break;
+				case '32': //mensual
+					$periodicidadDePagoEnDias = 30.4;
+					break;
+			}
+			// calcular fecha de liquidacion
+
+			$montoAPlazos = $cobro->montoTotal-$cobro->enganche;
+			$numeroDeAbonosTotales = ceil($montoAPlazos/$cobro->montoAbonoAcordado);
+			$abonosPagados = floor($cobro->totalPagadoEnAbonos/$cobro->montoAbonoAcordado);
+
+			$fechaInicial = new DateTime($cobro->fechaPrimerPago);
+			$fechaPrimerPagoH = $fechaInicial->format('d-m-Y'); // 5
+
+			$fechaHoy = new DateTime('NOW');
+			$diferenciaPrimerPagoYHoy = $fechaInicial->diff($fechaHoy);
+			$diasTranscurridos = $diferenciaPrimerPagoYHoy->days;
+
+			$pagosALaFecha = (floor($diasTranscurridos/$periodicidadDePagoEnDias) > ($numeroDeAbonosTotales) ) ? $numeroDeAbonosTotales : floor($diasTranscurridos/$periodicidadDePagoEnDias);
+			$pagosAtrasados = $pagosALaFecha-$abonosPagados; //8
+			$saldoAtrasado = $pagosAtrasados*$cobro->montoAbonoAcordado; // 9
+
+			$porcentajePagadoTmp = ($cobro->totalPagadoEnAbonos/$montoAPlazos)*100; // 7
+			$porcentajePagado = number_format((float)$porcentajePagadoTmp, 2, '.', ',');
+
+
+			$cantidadDeDiasDelPlazo = ceil($numeroDeAbonosTotales*$periodicidadDePagoEnDias);
+			$codigoParaDate = "P".$cantidadDeDiasDelPlazo."D";
+			$fechaTerminacionCredito = $fechaInicial;
+			$fechaTerminacionCredito->add(new DateInterval($codigoParaDate));
+			$fechaTerminacionCreditoH = $fechaTerminacionCredito->format('d-m-Y'); // 6
+
+			$fechaProximoPagoInt = new DateTime($cobro->fechaProximoPago);
+			$fechaProximoPagoH = $fechaProximoPagoInt->format('d-m-Y');
+
+			//calcular saldo
+			$saldo = $cobro->montoTotal-$cobro->totalPagadoEnAbonos-$cobro->enganche;
+			$pagoMinimo = $cobro->montoAbonoAcordado; // 10
+			// lista de pagos nva
+			$arrPagos = array();
+			$sql1 = "select ID_CUENTA as idCuenta, NUMERO_PAGO as numeroPago, date_format(fecha_pago,'%d-%m-%Y') as fechaPago, RECIBO_TIENDA as reciboTienda, MONTO_ABONO as montoAbono, MONTO_SALDO as montoSaldo from core_saldo where ID_CUENTA = ".$cobro->idCuenta." order by NUMERO_PAGO";
+			$resultados = DB::connection('remoto')->select($sql1);
+			foreach ($resultados as $resultado){
+				$arrPagos[] = array(
+					'pagoNo' => $resultado->numeroPago,
+					'fecha' => $resultado->fechaPago,
+					'recibo' => $resultado->reciboTienda,
+					'monto' => $resultado->montoAbono,
+					'saldo' => $resultado->montoSaldo,
+				);
+			}
+			$arrPagosInv = array();
+			$ultimo = count($arrPagos)-1;
+			for($i=$ultimo;$i>=0;$i--){
+				$arrPagosInv[] = $arrPagos[$i];
+			}
+
+			$total = (count($arrPagosInv)>=10) ? 10 : count($arrPagosInv);
+			$stringPagos='';
+			for($t=0;$t<$total;$t++){
+				if(!empty($stringPagos)) $stringPagos.='y';
+				$stringPagos.=$arrPagosInv[$t]['pagoNo']." ".$arrPagosInv[$t]['fecha']." ".$arrPagosInv[$t]['recibo']." ".$arrPagosInv[$t]['monto']." ".$arrPagosInv[$t]['saldo'];
+			}
+
+			$sql2 = "select max(NUMERO_PAGO) as ultimoAbono from core_saldo where ID_CUENTA = ".$cobro->idCuenta;
+			$resultados = DB::connection('remoto')->select($sql2);
+			foreach ($resultados as $resultado){
+				$ultimoAbono = 	$resultado->ultimoAbono;
+			}
+
+			// productos
+			$sql3 = "select sc.DESCRIPCION_CAT_INFORMACION as productos from core_mercancia
+				left join sec_cat_catalogo_informacion sc on sc.ID_SEC_CAT_INFORMACION = core_mercancia.ID_MERCANCIA
+				where core_mercancia.ID_CUENTA = ". $cobro->idCuenta;
+			$resultados = DB::connection('remoto')->select($sql3);
+			$productos = ''; // 12
+			foreach ($resultados as $resultado){
+				if(!empty($productos)) $productos.=", ";
+				$productos.=$resultado->productos;
+			}
+			// pronto pago
+			$stringProntoPago='';
+			$sql4 = "select ID_CUENTA as idCuenta, PLAZO as plazo,PRECIO as precio, FECHA as fecha, DATE_FORMAT(FECHA, '%d-%m-%Y') as fechaH from core_credicontado where ID_CUENTA = ".$cobro->idCuenta. "  and ACTIVO=1 order by plazo";
+			$arrProntoPago = array(); // 14 - 15
+			$resultados = DB::connection('remoto')->select($sql4);
+			foreach ($resultados as $resultado){
+				$fechaHoy = new DateTime('NOW');
+				$fechaDescuento = new DateTime($resultado->fecha);
+				if($fechaHoy<=$fechaDescuento){
+//					$arrProntoPago[] = array('idCuenta' => $resultado->idCuenta,'plazo' => $resultado->plazo,'precio'=>$resultado->precio,'fecha'=>$resultado->fecha);
+					if(!empty($stringProntoPago)) $stringProntoPago.='y';
+					$stringProntoPago.=$resultado->fechaH." ".$resultado->precio;
+				}
+			}
+
+			// direccion
+			$fotoFachada = '';
+			$sql4="select core_direccion.ID_DIRECCION,
+			core_direccion.CALLE,
+			core_direccion.NUMERO_EXTERIOR,
+			core_direccion.NUMERO_INTERIOR,
+			core_direccion.COLONIA,
+			core_direccion.DELEGACION,
+			core_direccion.MUNICIPIO,
+			core_direccion.REFERENCIA_CALLES,
+			core_direccion.CODIGO_POSTAL from core_direccion where ID_SUJETO = ".$cobro->idCliente;
+			$direcciones = DB::connection('remoto')->select($sql4);
+			foreach ($direcciones as $direccion) {
+				$idDireccion = $direccion->ID_DIRECCION;
+				$calle = ($direccion->CALLE == null) ? ' ' : $direccion->CALLE;
+				$no_ext = ($direccion->NUMERO_EXTERIOR == null) ? ' ' : $direccion->NUMERO_EXTERIOR;
+				$no_int = ($direccion->NUMERO_INTERIOR == null) ? ' ' : $direccion->NUMERO_INTERIOR;
+				$colonia = ($direccion->COLONIA == null) ? ' ' : $direccion->COLONIA;
+				$delegacion = ($direccion->DELEGACION == null) ? ' ' : $direccion->DELEGACION;
+				$municipio = ($direccion->MUNICIPIO == null) ? ' ' : $direccion->MUNICIPIO;
+				$referencias = ($direccion->REFERENCIA_CALLES == null) ? ' ' : $direccion->REFERENCIA_CALLES;
+				$cp = ($direccion->CODIGO_POSTAL == null) ? ' ' : $direccion->CODIGO_POSTAL;
+			}
+			// fotos
+//			$fotoFachada = $this->traerFoto(1,$cobro->idCliente);
+//			$fotoIne = $this->traerFoto(2,$cobro->idCliente);
+			$fotoFachada = '';
+			$fotoIne = '';
+
+			// montos totales
+			$montoTotal = floatval($cobro->montoTotal);
+			$montoAbonoAcordado = floatval($cobro->montoAbonoAcordado);
+
+//			$sql5="select orden from orden where idCuenta=".$cobro->idCuenta;
+//			$ordenTmp = DB::connection('mysql')->select($sql5);
+//			if(!empty($ordenTmp)){
+//				$ordenDeItem = $ordenTmp[0]->orden;
+//			}else{
+//				$sql6 = "insert into orden set idCuenta = ".$cobro->idCuenta.",orden = $maximo";
+//				DB::connection('mysql')->insert($sql6);
+//				$ordenDeItem = $maximo;
+//				$maximo++;
+//			}
+			$ordenDeItem = 1;
+
+			$arrCobros[] = array(
+				'idCobrador' => $cobro->idCobrador,
+				'idContrato' => $cobro->idContrato,
+				'idCliente' => $cobro->idCliente,
+				'idCuenta' => $cobro->idCuenta,
+				'fechaVenta' => $cobro->fechaVenta,
+				'claveCuenta' => $cobro->claveCuenta,
+				'idTipoPago' => $cobro->idTipoPago,
+				'diaPago' => $cobro->diaPago,
+				'diaPagoA' => $cobro->diaPagoA,
+				'diaPagoB' => $cobro->diaPagoB,
+				'fechaProximoPago' => $fechaProximoPagoH,
+				'idPersona' => $cobro->idPersona,
+				'nombreCliente' => $cobro->nombreCliente,
+				'idDireccion' => $idDireccion,
+				'calle' => $calle,
+				'no_ext' => $no_ext,
+				'no_int' => $no_int,
+				'colonia' => $colonia,
+				'delegacion' => $delegacion,
+				'municipio' => $municipio,
+				'referencias' => $referencias,
+				'cp' => $cp,
+				'orden' => $ordenDeItem,
+				'cobrado' => 0,
+				'subido' => 0,
+				'recibo' => 0,
+				'fotoIdentificacion' => $fotoIne,
+				'fotoFachada' => $fotoFachada,
+				'montoCobradoEnVisita' => 0.00,
+				'fechaSiguientePago' => '',
+				'visitado' => 0,
+				'montoTotal' => $montoTotal,
+				'montoAbonoAcordado' => $montoAbonoAcordado,
+				'fechaPrimerPago' => $fechaPrimerPagoH,
+				'nota' => '',
+				'notaOriginal' => $cobro->notaOriginal,
+				'fechaTerminacionCredito' => $fechaTerminacionCreditoH,
+				'saldo' => $saldo,
+				'porcentajePagado' => $porcentajePagado,
+				'pagosAtrasados' => $pagosAtrasados,
+				'saldoAtrasado' => $saldoAtrasado,
+				'productos' => $productos,
+				'prontoPago' => $stringProntoPago,
+				'relacionPagos' => $stringPagos
+			);
+		}
+
+		// ordenar por campo orden
+		$campoOrden  = array_column($arrCobros, 'orden');
+		array_multisort($campoOrden, SORT_ASC, $arrCobros);
+
+		return response($arrCobros, 200);
+	}
+
+
+
+
+
+
 }
